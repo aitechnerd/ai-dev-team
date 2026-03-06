@@ -81,17 +81,44 @@ Create `.claude/stack.md` with detected results.
 - mlops (Sonnet) — only if ML dependencies detected
 ```
 
-## Step 3: Check Setup Status
+## Step 3: Check & Fix Setup
+
+Run ALL of these checks. Report EVERY item. Fix what you can.
 
 ```bash
 echo "=== Setup Status ==="
+
+# 1. Global install
 [ -d "$HOME/.claude/agents" ] && echo "GLOBAL=ok" || echo "GLOBAL=missing"
+
+# 2. settings.json (hooks)
 [ -f ".claude/settings.json" ] && echo "SETTINGS=ok" || echo "SETTINGS=missing"
+
+# 3. ai-team.md (team reference)
 [ -f ".claude/ai-team.md" ] && echo "AI_TEAM_MD=ok" || echo "AI_TEAM_MD=missing"
+
+# 4. .ai-team/ directory
 [ -d ".ai-team" ] && echo "AI_TEAM_DIR=ok" || echo "AI_TEAM_DIR=missing"
+
+# 5. CLAUDE.md references ai-team.md
 grep -q "ai-team.md" CLAUDE.md 2>/dev/null && echo "CLAUDE_REF=ok" || echo "CLAUDE_REF=missing"
+
+# 6. Project context
 [ -f ".claude/project-context.md" ] && echo "CONTEXT=ok" || echo "CONTEXT=missing"
 ```
+
+**Auto-fix any missing items:**
+
+- SETTINGS=missing → "Run `bash /path/to/install.sh project`"
+- AI_TEAM_MD=missing → "Run `bash /path/to/install.sh project`"
+- AI_TEAM_DIR=missing → Create it: `mkdir -p .ai-team`
+- CLAUDE_REF=missing → Prepend to CLAUDE.md:
+  `Read .claude/ai-team.md for the AI Dev Team system reference.`
+  (If no CLAUDE.md exists, create it with that line.)
+- CONTEXT=missing → "Run `/setup` to create project context"
+
+**IMPORTANT: Show ALL 6 items in the report, even if they are ok.**
+Do NOT skip or summarize items that pass. The user wants to see the full checklist.
 
 ## Step 4: Check Scanners
 
@@ -159,30 +186,40 @@ npx eslint --version >/dev/null 2>&1 && echo "eslint=ok" || echo "eslint=missing
 command -v hadolint >/dev/null 2>&1 && echo "hadolint=ok" || echo "hadolint=missing"
 ```
 
-## Step 5: Show Report
+## Step 5: Auto-Fix & Report
 
-Present a single status report. For any missing items, show the exact install command.
+**Auto-fix what you can:**
+
+If CLAUDE_REF is missing (CLAUDE.md exists but doesn't reference ai-team.md):
+- Prepend `Read .claude/ai-team.md for the AI Dev Team system reference.` to the top of CLAUDE.md
+- Report as fixed
+
+If AI_TEAM_DIR is missing:
+- Create `.ai-team/` directory
+- Report as fixed
+
+Then present the status report showing ALL 6 setup items, even if they pass:
 
 > "**Project: [name]**
 > **Stack:** [detected languages]
 >
 > **Setup:**
-> ✅ Global install
-> ✅ settings.json
-> ✅ .ai-team/ directory
+> ✅ Global install — agents and commands in ~/.claude/
+> ✅ settings.json — hooks configured
+> ✅ ai-team.md — team system reference
+> ✅ .ai-team/ directory — feature docs
+> ✅ CLAUDE.md — references ai-team.md
 > ❌ Project context — run `/setup` to create
 >
 > **Scanners:**
-> ✅ semgrep, gitleaks
-> ❌ Missing: bandit, ruff, pip-audit
->
-> **Install missing scanners:**
-> ```
-> pipx install bandit && pipx install ruff && pipx install pip-audit
-> ```
-> (No pipx? `brew install pipx && pipx ensurepath` first)
+> ✅ semgrep, gitleaks, trivy (global)
+> ✅ bandit, ruff (.venv)
+> ❌ pip-audit — `pip install pip-audit` (in your venv)
 >
 > **Ready?** `/scope [description]` to start working"
+
+Show ✅ or ❌ for EVERY line — never skip items that pass.
+If you auto-fixed something, show it as: 🔧 CLAUDE.md — added ai-team.md reference (fixed)
 
 Use these install commands for each scanner:
 

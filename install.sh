@@ -149,13 +149,15 @@ setup_project() {
         cp "$SCRIPT_DIR/CLAUDE.md" "./CLAUDE.md"
         ok "CLAUDE.md → project root (edit this with your project conventions)"
     else
-        # Check if CLAUDE.md references ai-team.md
+        # Check if CLAUDE.md references ai-team.md — add if missing
         if ! grep -q 'ai-team.md' CLAUDE.md 2>/dev/null; then
-            info "CLAUDE.md exists but doesn't reference team docs."
-            echo "       Add this line near the top of your CLAUDE.md:"
-            echo ""
-            echo "       Read \`.claude/ai-team.md\` for the AI Dev Team system reference."
-            echo ""
+            # Prepend the reference line at the top
+            local tmp=$(mktemp)
+            echo 'Read `.claude/ai-team.md` for the AI Dev Team system reference.' > "$tmp"
+            echo "" >> "$tmp"
+            cat CLAUDE.md >> "$tmp"
+            mv "$tmp" CLAUDE.md
+            ok "CLAUDE.md updated (added ai-team.md reference at top)"
         fi
     fi
 
