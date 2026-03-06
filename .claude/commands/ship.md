@@ -10,8 +10,8 @@ description: >
 
 ## Pre-Check
 
-Read `docs/features/.active` for active feature.
-Let FEATURE_DIR = `docs/features/{active_name}/`
+Read `.ai-team/.active` for active feature.
+Let FEATURE_DIR = `.ai-team/{active_name}/`
 
 Check that build is complete:
 - `$FEATURE_DIR/qa-report.md` exists with PASS or CONDITIONAL PASS

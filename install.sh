@@ -82,16 +82,21 @@ install_global() {
     cp -f "$SCRIPT_DIR/.claude/scripts/"*.py "$TARGET/scripts/" 2>/dev/null && true
     cp -f "$SCRIPT_DIR/.claude/scripts/"*.sh "$TARGET/scripts/" 2>/dev/null && true
     chmod +x "$TARGET/scripts/"*.py "$TARGET/scripts/"*.sh 2>/dev/null || true
-    ok "run-scanners.sh, plan-gate-check.py, subagent-orchestrator.py"
+
+    echo ""
+    echo "📋 Team reference..."
+    cp -f "$SCRIPT_DIR/.claude/ai-team.md" "$TARGET/ai-team.md"
+    ok "ai-team.md (team system docs)"
 
     echo ""
     echo -e "${GREEN}Global install complete.${NC}"
     echo ""
     echo "Installed to: $TARGET"
     echo "  agents/    — 9 agents (Opus: PO + SE, Haiku: triage, Sonnet: rest)"
-    echo "  commands/  — 12 slash commands"
+    echo "  commands/  — 18 slash commands"
     echo "  stacks/    — 6 language profiles"
-    echo "  scripts/   — scanner runner + helpers"
+    echo "  scripts/   — scanner runner + hooks"
+    echo "  ai-team.md — team system reference"
 }
 
 # ============================================================
@@ -110,33 +115,56 @@ setup_project() {
     fi
 
     mkdir -p "$TARGET"
-    mkdir -p "docs/features"
+    mkdir -p ".ai-team"
+    ok ".ai-team/ directory ready"
+
+    # .gitignore — add .ai-team/ if not already present
+    if [ -f ".gitignore" ]; then
+        if ! grep -q '\.ai-team' .gitignore 2>/dev/null; then
+            printf "\n# AI Dev Team (generated feature docs)\n.ai-team/\n" >> .gitignore
+            ok ".gitignore updated (added .ai-team/)"
+        fi
+    else
+        printf "# AI Dev Team (generated feature docs)\n.ai-team/\n" > .gitignore
+        ok ".gitignore created (with .ai-team/)"
+    fi
 
     # settings.json — hooks config (project-level only)
     if [ ! -f "$TARGET/settings.json" ]; then
         cp "$SCRIPT_DIR/.claude/settings.json" "$TARGET/settings.json"
         ok "settings.json (hooks config)"
+    elif ! diff -q "$SCRIPT_DIR/.claude/settings.json" "$TARGET/settings.json" > /dev/null 2>&1; then
+        cp "$SCRIPT_DIR/.claude/settings.json" "$TARGET/settings.json"
+        ok "settings.json updated to latest version"
     else
-        info "settings.json already exists — skipping"
+        info "settings.json already up to date"
     fi
 
-    # CLAUDE.md — project conventions
+    # .claude/ai-team.md — team system reference (always updated)
+    cp "$SCRIPT_DIR/.claude/ai-team.md" "$TARGET/ai-team.md"
+    ok "ai-team.md (team system reference — always kept up to date)"
+
+    # CLAUDE.md — project conventions (user-owned, created once)
     if [ ! -f "CLAUDE.md" ]; then
         cp "$SCRIPT_DIR/CLAUDE.md" "./CLAUDE.md"
-        ok "CLAUDE.md → project root"
+        ok "CLAUDE.md → project root (edit this with your project conventions)"
     else
-        echo ""
-        warn "CLAUDE.md exists. To add team system docs, append:"
-        echo "     cat $SCRIPT_DIR/CLAUDE.md >> CLAUDE.md"
+        # Check if CLAUDE.md references ai-team.md
+        if ! grep -q 'ai-team.md' CLAUDE.md 2>/dev/null; then
+            info "CLAUDE.md exists but doesn't reference team docs."
+            echo "       Add this line near the top of your CLAUDE.md:"
+            echo ""
+            echo "       Read \`.claude/ai-team.md\` for the AI Dev Team system reference."
+            echo ""
+        fi
     fi
 
     echo ""
     echo -e "${GREEN}Project setup complete.${NC}"
     echo ""
     echo "Next steps:"
-    echo "  1. In Claude Code, run:  /detect          # Detect languages, generate stack.md"
-    echo "  2. Install scanners:     bash ~/ai-team/install-scanners.sh"
-    echo "  3. Start building:       /scope [description]"
+    echo "  1. In Claude Code, run:  /detect          # Detect stack, check setup, install scanners"
+    echo "  2. Start working:        /scope [description]"
 }
 
 # ============================================================
@@ -192,8 +220,8 @@ show_status() {
     else
         info "CLAUDE.md — not found"
     fi
-    if [ -d "docs/features" ]; then
-        local feat_count=$(ls -d docs/features/*/ 2>/dev/null | wc -l | tr -d ' ')
+    if [ -d ".ai-team" ]; then
+        local feat_count=$(ls -d .ai-team/*/ 2>/dev/null | wc -l | tr -d ' ')
         ok "Features: $feat_count"
     fi
 }

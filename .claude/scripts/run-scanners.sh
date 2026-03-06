@@ -3,7 +3,7 @@
 #
 # Auto-detects project language(s) and runs available security/quality
 # scanners that produce structured reports. Reports are saved to a
-# specified output directory (default: docs/features/{active}/scans/).
+# specified output directory (default: .ai-team/{active}/scans/).
 #
 # Usage:
 #   bash .claude/scripts/run-scanners.sh [output_dir]
@@ -12,13 +12,34 @@
 
 set -euo pipefail
 
+# --- Find tools in PATH or venv ---
+find_tool() {
+    local tool="$1"
+    # Check project venvs first, then global PATH
+    if [ -x ".venv/bin/$tool" ]; then
+        echo ".venv/bin/$tool"
+        return 0
+    elif [ -x "venv/bin/$tool" ]; then
+        echo "venv/bin/$tool"
+        return 0
+    elif command -v "$tool" &>/dev/null; then
+        command -v "$tool"
+        return 0
+    fi
+    return 1
+}
+
+has_tool() {
+    find_tool "$1" >/dev/null 2>&1
+}
+
 # --- Output directory ---
-ACTIVE_FILE="docs/features/.active"
+ACTIVE_FILE=".ai-team/.active"
 if [ -n "${1:-}" ]; then
     OUT_DIR="$1"
 elif [ -f "$ACTIVE_FILE" ]; then
     FEATURE=$(cat "$ACTIVE_FILE" | tr -d '[:space:]')
-    OUT_DIR="docs/features/$FEATURE/scans"
+    OUT_DIR=".ai-team/$FEATURE/scans"
 else
     OUT_DIR="docs/scans"
 fi
@@ -62,9 +83,10 @@ run_tool() {
 # ============================================================
 
 # --- Semgrep (SAST — all languages) ---
-if command -v semgrep &>/dev/null; then
+if has_tool semgrep; then
+    SEMGREP_CMD=$(find_tool semgrep)
     run_tool "Semgrep" \
-        "semgrep --config=auto --json --quiet 2>/dev/null || true" \
+        "$SEMGREP_CMD --config=auto --json --quiet 2>/dev/null || true" \
         "$OUT_DIR/semgrep.json" \
         "Static analysis (SAST) across all languages"
 fi
@@ -176,17 +198,19 @@ if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ] || 
     echo "" >> "$SUMMARY_FILE"
 
     # Bandit (Python SAST)
-    if command -v bandit &>/dev/null; then
+    if has_tool bandit; then
+        BANDIT_CMD=$(find_tool bandit)
         run_tool "Bandit" \
-            "bandit -r . -f json --exclude .venv,venv,node_modules,.git 2>/dev/null || true" \
+            "$BANDIT_CMD -r . -f json --exclude .venv,venv,node_modules,.git 2>/dev/null || true" \
             "$OUT_DIR/bandit.json" \
             "Python security: hardcoded passwords, injection, unsafe functions"
     fi
 
     # pip-audit
-    if command -v pip-audit &>/dev/null; then
+    if has_tool pip-audit; then
+        PIP_AUDIT_CMD=$(find_tool pip-audit)
         run_tool "pip-audit" \
-            "pip-audit --format json 2>/dev/null || true" \
+            "$PIP_AUDIT_CMD --format json 2>/dev/null || true" \
             "$OUT_DIR/pip-audit.json" \
             "Known vulnerabilities in Python packages"
     fi
@@ -281,11 +305,11 @@ echo "" >> "$SUMMARY_FILE"
 
 if [ $TOOLS_RUN -eq 0 ]; then
     echo "⚠️  No scanners found. Install tools for your stack:" >> "$SUMMARY_FILE"
-    echo "- Multi-language: \`pip install semgrep\`, \`brew install gitleaks trivy\`" >> "$SUMMARY_FILE"
-    echo "- Rust: \`cargo install cargo-audit cargo-deny cargo-machete\`" >> "$SUMMARY_FILE"
+    echo "- Multi-language: \`brew install semgrep gitleaks trivy\`" >> "$SUMMARY_FILE"
+    echo "- Python: \`pip install bandit pip-audit ruff\` (in your venv or via pipx)" >> "$SUMMARY_FILE"
+    echo "- Rust: \`cargo install cargo-audit cargo-deny\`" >> "$SUMMARY_FILE"
     echo "- Ruby: \`gem install brakeman bundler-audit\`" >> "$SUMMARY_FILE"
-    echo "- Python: \`pip install bandit pip-audit\`" >> "$SUMMARY_FILE"
-    echo "- JS/TS: \`npm audit\` (built-in), \`npm i -D eslint eslint-plugin-security\`" >> "$SUMMARY_FILE"
+    echo "- Run /detect in Claude Code for full setup guide" >> "$SUMMARY_FILE"
     echo ""
     echo "⚠️  No scanners installed. See $SUMMARY_FILE for install instructions."
 else

@@ -19,7 +19,7 @@ git diff --stat               # Unstaged changes
 
 Check if a feature is active:
 ```bash
-cat docs/features/.active 2>/dev/null
+cat .ai-team/.active 2>/dev/null
 ```
 
 If active feature exists → read its SOW for acceptance criteria.

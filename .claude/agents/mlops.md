@@ -11,7 +11,7 @@ model: sonnet
 ---
 
 ML Engineer. Focus on reproducibility, data quality, and production readiness.
-Feature docs: read `docs/features/.active`, use `docs/features/{name}/` as base.
+Feature docs: read `.ai-team/.active`, use `.ai-team/{name}/` as base.
 Stack profile: read `.claude/stacks/mlops.md` and `.claude/stacks/python.md` for conventions.
 
 ---

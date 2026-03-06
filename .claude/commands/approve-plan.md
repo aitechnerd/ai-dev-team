@@ -8,8 +8,8 @@ description: >
 
 ## Process
 
-1. Read `docs/features/.active` for active feature. If none, error.
-   Let FEATURE_DIR = `docs/features/{active_name}/`
+1. Read `.ai-team/.active` for active feature. If none, error.
+   Let FEATURE_DIR = `.ai-team/{active_name}/`
 
 2. Verify `$FEATURE_DIR/technical-plan.md` exists. If not:
    > "No technical plan for '{active_name}'. Run /scope first."

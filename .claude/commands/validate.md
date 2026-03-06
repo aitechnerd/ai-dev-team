@@ -11,8 +11,8 @@ description: >
 Focus area (optional): $ARGUMENTS
 
 ## Pre-Check
-Read `docs/features/.active` for active feature. If none -> `/switch` first.
-Let FEATURE_DIR = `docs/features/{active_name}/`
+Read `.ai-team/.active` for active feature. If none -> `/switch` first.
+Let FEATURE_DIR = `.ai-team/{active_name}/`
 Verify `$FEATURE_DIR/sow.md` exists. If not -> `/scope` first.
 
 ## Step 1: Run Scanners

@@ -10,5 +10,6 @@ Thumbs.db
 .vscode/
 
 # Generated at install time (not part of the repo)
-docs/features/
+.ai-team/
 .claude/stack.md
+.claude/project-context.md

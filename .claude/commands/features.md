@@ -9,9 +9,9 @@ description: >
 
 ## Process
 
-1. Read the active feature from `docs/features/.active` (if it exists)
+1. Read the active feature from `.ai-team/.active` (if it exists)
 
-2. List all directories in `docs/features/` (excluding .active file)
+2. List all directories in `.ai-team/` (excluding .active file)
 
 3. For each feature directory, check which artifacts exist and determine status:
    - Only directory exists → 🆕 Created (no SOW yet)
@@ -38,5 +38,5 @@ description: >
 > - `/switch [name]` — switch active feature
 > - `/scope [name] [description]` — start a new feature
 
-If `docs/features/` doesn't exist or is empty:
+If `.ai-team/` doesn't exist or is empty:
 > "No features yet. Start with `/scope [feature-name] [description]`"

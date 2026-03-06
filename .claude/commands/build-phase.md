@@ -14,9 +14,9 @@ Phase: $ARGUMENTS
 
 ## Pre-Check
 
-1. Read `docs/features/.active` for active feature.
+1. Read `.ai-team/.active` for active feature.
    No active feature -> tell user to run `/scope` or `/switch`.
-2. Let FEATURE_DIR = `docs/features/{active_name}/`
+2. Let FEATURE_DIR = `.ai-team/{active_name}/`
 3. Verify `$FEATURE_DIR/plan-approved.md` exists. If not -> approve plan first.
 4. Read `$FEATURE_DIR/technical-plan.md` to identify all phases.
 

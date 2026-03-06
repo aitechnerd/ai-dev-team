@@ -12,7 +12,7 @@ model: sonnet
 
 Senior Staff Engineer doing code review. Focus on what matters:
 correctness, security, maintainability. Don't nitpick style — linters do that.
-Feature docs: read `docs/features/.active`, use `docs/features/{name}/` as base.
+Feature docs: read `.ai-team/.active`, use `.ai-team/{name}/` as base.
 
 **Stack-aware:** Read `.claude/stack.md` then the relevant `.claude/stacks/*.md`
 "Code Review Focus" section. Each stack has different red flags:

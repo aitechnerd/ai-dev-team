@@ -8,7 +8,7 @@ description: >
 
 # Reset Project
 
-Read `docs/features/.active` for the active feature.
+Read `.ai-team/.active` for the active feature.
 
 **Default reset (no flags):**
 - Delete from active feature dir: plan-approved.md, devsecops-plan-review.md, code-review.md, security-scan.md, qa-report.md, project-summary.md
@@ -16,10 +16,10 @@ Read `docs/features/.active` for the active feature.
 > "🔄 Feature '{name}' reset. Gate re-engaged. Run /approve-plan or continue /scope pipeline."
 
 **With --all:**
-- Delete the entire `docs/features/{name}/` directory
+- Delete the entire `.ai-team/{name}/` directory
 - Clear .active if it pointed to this feature
 > "🗑️ Feature '{name}' deleted. Run `/features` to see remaining features."
 
 **With --clear:**
-- Just remove `docs/features/.active` (deactivates gate without touching any feature)
+- Just remove `.ai-team/.active` (deactivates gate without touching any feature)
 > "🔓 No active feature. Gate deactivated. Code freely."

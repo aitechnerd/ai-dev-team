@@ -11,7 +11,7 @@ description: >
 ## Process
 
 1. Determine the output directory:
-   - If active feature exists: `docs/features/{active_name}/scans/`
+   - If active feature exists: `.ai-team/{active_name}/scans/`
    - Otherwise: `docs/scans/`
 
 2. Run the scanner script:

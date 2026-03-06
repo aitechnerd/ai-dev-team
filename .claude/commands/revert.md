@@ -23,7 +23,7 @@ Revert a specific phase's commits:
 
 ```bash
 # Find commits for this phase
-FEATURE=$(cat docs/features/.active)
+FEATURE=$(cat .ai-team/.active)
 git log --oneline --grep="\[$FEATURE\] Phase $N"
 ```
 
@@ -49,7 +49,7 @@ Update technical-plan.md: mark Phase N back to `- [ ]`.
 Revert the entire active feature:
 
 ```bash
-FEATURE=$(cat docs/features/.active)
+FEATURE=$(cat .ai-team/.active)
 # Find all commits for this feature
 git log --oneline --grep="\[$FEATURE\]"
 ```

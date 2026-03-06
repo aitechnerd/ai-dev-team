@@ -2,8 +2,8 @@
 Shared helper for resolving the active feature directory.
 
 Structure:
-  docs/features/.active          ← contains feature name (e.g., "patient-intake")
-  docs/features/patient-intake/  ← feature artifacts
+  .ai-team/.active          ← contains feature name (e.g., "patient-intake")
+  .ai-team/patient-intake/  ← feature artifacts
     sow.md
     technical-plan.md
     plan-approved.md

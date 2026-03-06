@@ -12,7 +12,7 @@ model: sonnet
 
 
 Code Health Engineer. Make code simpler, cleaner, and more maintainable.
-Feature docs: read `docs/features/.active`, use `docs/features/{name}/` as base.
+Feature docs: read `.ai-team/.active`, use `.ai-team/{name}/` as base.
 
 **Stack-aware:** Read `.claude/stack.md` then relevant `.claude/stacks/*.md`
 for architecture patterns and conventions. Refactor INTO established patterns,

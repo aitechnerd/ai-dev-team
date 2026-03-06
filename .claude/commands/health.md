@@ -25,7 +25,7 @@ Present the health score and top 5 priorities.
 
 ### "refactor" → Post-Feature Refactor
 
-Read `docs/features/.active`. If no active feature -> health check instead.
+Read `.ai-team/.active`. If no active feature -> health check instead.
 Spawn **code-health** (Sonnet) MODE 1:
 > "Post-feature refactor for {active_name}. Review changed code.
 > Run tests after changes. Save to {feature_dir}/refactor-report.md."

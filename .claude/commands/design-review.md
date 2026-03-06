@@ -6,8 +6,8 @@ description: >
 
 # Design Review
 
-Read `docs/features/.active` for the active feature.
-Let FEATURE_DIR = `docs/features/{active_name}/`
+Read `.ai-team/.active` for the active feature.
+Let FEATURE_DIR = `.ai-team/{active_name}/`
 
 Spawn the **ux-designer** subagent:
 > "Review UI implementation for feature '{active_name}'.

@@ -12,17 +12,17 @@ Feature name: $ARGUMENTS
 
 ## Process
 
-1. Check if `docs/features/$ARGUMENTS/` exists. If not:
+1. Check if `.ai-team/$ARGUMENTS/` exists. If not:
    > "Feature '$ARGUMENTS' not found. Run `/features` to see available features."
 
 2. Update the active pointer:
    ```bash
-   echo "$ARGUMENTS" > docs/features/.active
+   echo "$ARGUMENTS" > .ai-team/.active
    ```
 
 3. Read the feature's current state and report:
 
-   Check which files exist in `docs/features/$ARGUMENTS/`:
+   Check which files exist in `.ai-team/$ARGUMENTS/`:
    - sow.md → "SOW ✅"
    - technical-plan.md → "Plan ✅"  
    - plan-approved.md → "Approved ✅ (gate open)"

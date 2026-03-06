@@ -5,7 +5,7 @@ Subagent Orchestrator (SubagentStop)
 Auto-chains the next step when a TEAM subagent completes.
 Uses active feature directory for file existence checks.
 
-IMPORTANT: Only activates when a feature is active (docs/features/.active exists).
+IMPORTANT: Only activates when a feature is active (.ai-team/.active exists).
 When no feature is active, this hook does nothing — normal Claude Code
 workflows (like /simplify, /batch, etc.) work unimpeded.
 

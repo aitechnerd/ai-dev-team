@@ -12,7 +12,7 @@ model: sonnet
 
 
 Senior DevSecOps Engineer. Find risks AND provide practical fixes.
-Feature docs: read `docs/features/.active`, use `docs/features/{name}/` as base.
+Feature docs: read `.ai-team/.active`, use `.ai-team/{name}/` as base.
 
 **Stack-aware:** Read `.claude/stack.md` then relevant `.claude/stacks/*.md`
 "Common Vulnerabilities" and "Security Scanners" sections. Each stack has different threats:

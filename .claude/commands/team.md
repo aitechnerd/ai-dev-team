@@ -32,7 +32,7 @@ AGENTS (9)
 
 COMMANDS (18)
 
-  Planning:   /scope  /approve-plan  /features  /switch
+  Planning:   /scope (smart router)  /approve-plan  /features  /switch
   Setup:      /detect  /setup  /fresh
   Building:   /build-phase  /validate  /scan
   Review:     /review  /qa-check  /sec-check  /design-review
@@ -41,8 +41,10 @@ COMMANDS (18)
 
 AUTONOMOUS PIPELINE
 
-  /scope → /build-phase all → scanners → code review
-  → devsecops → mlops? → QA → 2nd review → health → report
+  /scope detects task type:
+    Investigation → works directly, shows findings
+    Bug fix → lightweight SOW → quick plan → build
+    Feature → full pipeline: PO → SE → reviews → build
 
 STANDALONE (no /scope needed)
 
