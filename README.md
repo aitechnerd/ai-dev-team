@@ -31,15 +31,14 @@ ai-team project
 ┌─────────────────────────────────────────────────────────────┐
 │  /scope                              SMART TASK ROUTER      │
 │                                                             │
-│  Investigation? → work directly, show findings, done        │
-│  Bug fix? → lightweight SOW → 1-2 phase plan → auto-approve│
-│  Feature? ↓                                                 │
+│  Investigation? → work directly, no subagents (0 calls)     │
+│  Bug fix? → PO(Sonnet) + SE(Opus), auto-approve (2-3 calls)│
+│  Small feature? → PO(Sonnet) + SE(Opus) + DevSecOps?       │
+│                    auto-approve (3-4 calls)                 │
+│  Large feature? ↓ full pipeline (6-8 calls)                 │
 │                                                             │
-│  Triage (Haiku) → quick context scan                        │
-│  Product Owner (Opus) → discovery, scope, SOW               │
-│  Software Engineer (Opus) → technical plan                  │
-│  DevSecOps (Sonnet) → plan security review                  │
-│  Product Owner (Opus) → approves plan                       │
+│  Triage (Haiku) → PO (Opus) → SE+UX feasibility (Sonnet)   │
+│  → SE plan (Opus) → DevSecOps → PO approval (Sonnet)       │
 ├─────────────────────────────────────────────────────────────┤
 │  /build-phase all                          AUTONOMOUS       │
 │                                                             │
@@ -125,11 +124,11 @@ ai-team project
 | Situation | Approach |
 |-----------|----------|
 | Bug fix, small change | Just use Claude Code normally |
-| Investigation, data audit | `/scope` — auto-detects and investigates directly |
+| Investigation, data audit | `/scope` → auto-detects, works directly (0 agent calls) |
 | Quick review of your code | `/review`, `/qa-check`, or `/sec-check` |
-| Medium feature (1-3 files) | `/scope` for planning, then build manually |
-| Large feature (new subsystem) | Full pipeline: `/scope` → `/build-phase all` |
-| Security-sensitive (auth, PHI) | Full pipeline — DevSecOps review earns its cost |
+| Bug fix (known broken behavior) | `/scope` → light pipeline (2-3 agent calls) |
+| Small feature (1-3 files) | `/scope` → light pipeline (3-4 agent calls) |
+| Large feature (new subsystem) | `/scope` → full pipeline (6-8 agent calls) |
 
 The hooks are designed to stay out of your way. When no feature is active (`.ai-team/.active` doesn't exist), both hooks do nothing — Claude Code works exactly as normal.
 
@@ -222,15 +221,20 @@ your-project/
 
 ## Token Cost Model
 
-The system minimizes cost through:
+The system right-sizes the pipeline based on task complexity:
 
-- **Haiku triage** (~$0.25/MTok) preprocesses before expensive models run
-- **Conditional skipping** — DevSecOps skipped when clean, PO summary skipped for small features
-- **Sonnet for structured work** — code review, QA, security (cheaper than Opus)
-- **Opus for planning + implementation** — PO scoping, SE architecture and coding
-- **Trimmed prompts** — all agents 56-74% shorter than verbose alternatives
+| Task Type | Opus Calls | Sonnet Calls | Haiku Calls |
+|-----------|-----------|-------------|-------------|
+| Investigation | 0 | 0 | 0 |
+| Bug fix | 1 (SE plan) | 1 (PO scope) | 0 |
+| Small feature | 1 (SE plan) | 1-2 (PO + DevSecOps?) | 0 |
+| Large feature | 2 (PO + SE plan) | 3-4 (feasibility + reviews + approval) | 2 (triage) |
 
-Typical feature pipeline: 2 Opus calls + 3-5 Sonnet calls + 3-5 Haiku calls.
+Additional savings:
+- **Haiku triage** — cheap preprocessing before expensive models
+- **Conditional skipping** — UX only for UI features, DevSecOps only for security-relevant changes, MLOps only for ML projects
+- **Sonnet for structured work** — PO scoping for bugs/small features, feasibility checks, plan approval
+- **Opus only for deep work** — PO discovery on large features, SE architecture planning
 
 ## Project Structure
 

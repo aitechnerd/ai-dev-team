@@ -41,10 +41,11 @@ COMMANDS (18)
 
 AUTONOMOUS PIPELINE
 
-  /scope detects task type:
-    Investigation → works directly, shows findings
-    Bug fix → lightweight SOW → quick plan → build
-    Feature → full pipeline: PO → SE → reviews → build
+  /scope detects task type and right-sizes:
+    Investigation → works directly, 0 agent calls
+    Bug fix → PO(Sonnet) + SE(Opus), 2-3 calls
+    Small feature → PO(Sonnet) + SE(Opus) + DevSecOps?, 3-4 calls
+    Large feature → full pipeline, 6-8 calls
 
 STANDALONE (no /scope needed)
 

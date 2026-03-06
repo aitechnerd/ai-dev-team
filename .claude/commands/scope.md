@@ -1,7 +1,7 @@
 ---
 description: >
-  Smart entry point for any task. You describe what you need, and the system
-  figures out the right approach: investigation, bug fix, or feature build.
+  Smart entry point for any task. Detects what you need and right-sizes the
+  pipeline: investigation, bug fix, small feature, or large feature.
   Use: /scope [describe what you want]
   Example: /scope why are only a few lab results returned when we sent many orders
   Example: /scope the search is returning wrong results for partial names
@@ -15,34 +15,46 @@ Task description: $ARGUMENTS
 
 ## Step 0: Classify the Task
 
-Read the description carefully. Consider:
-- Is the user asking a question or trying to understand something? → **INVESTIGATION**
-- Is something broken that needs fixing? → **BUG**
-- Is the user asking to build, add, or create something new? → **FEATURE**
+Read the description carefully. Classify by **intent** (use judgment, not keywords):
 
-Use your judgment. Don't rely on keywords — understand the intent.
-
-Examples that are INVESTIGATION (not bugs):
-- "why are only a few lab results returned" — the user doesn't know what's wrong yet
+**INVESTIGATION** — user is asking a question or trying to understand something:
+- "why are only a few lab results returned"
 - "check if our Snowflake queries are hitting the right tables"
 - "how does the referral pipeline currently work"
-- "confirm that patient data is encrypted at rest"
 - "look into why the cron job takes 3 hours"
 
-Examples that are BUG:
-- "the search returns wrong results for partial names" — behavior is known, it's wrong
+**BUG** — something specific is broken and needs fixing:
+- "the search returns wrong results for partial names"
 - "patients can't upload documents on mobile"
 - "the nightly sync job has been failing since Tuesday"
 
-Examples that are FEATURE:
-- "add fuzzy search to patient lookup"
-- "build a dashboard showing referral conversion rates"
-- "set up automated lab result notifications"
+**SMALL FEATURE** — 1-3 files, isolated change, no architecture decisions:
+- "add a retry count column to the orders table"
+- "add input validation to the patient form"
+- "change the lookback window from 7 to 90 days"
+- "add a health check endpoint"
 
-**Tell the user what you detected:**
-> "This looks like an **investigation** / **bug fix** / **new feature**. [one line why]"
->
-> If the user disagrees, they can say so and you reclassify.
+**LARGE FEATURE** — new subsystem, multiple components, architecture decisions:
+- "build a patient intake form with demographics"
+- "add fuzzy search across all patient fields"
+- "set up automated lab result notifications"
+- "build a dashboard showing referral conversion rates"
+
+**Tell the user what you detected and what pipeline you'll use:**
+> "This looks like a **[type]**. I'll use the **[light/standard/full]** pipeline.
+> Estimated cost: ~[N] agent calls ([model breakdown]).
+> OK to proceed?"
+
+If the user disagrees, reclassify.
+
+### Pipeline Matrix
+
+| Type | Pipeline | Agent Calls | Models Used |
+|------|----------|-------------|-------------|
+| Investigation | Direct | 0 subagents | Just you |
+| Bug | Light | 2-3 | PO(Sonnet) + SE(Opus) |
+| Small feature | Light | 3-4 | PO(Sonnet) + SE(Opus) + DevSecOps(Sonnet) |
+| Large feature | Full | 6-8 | PO(Opus) + SE(Opus) + DevSecOps + UX + triage |
 
 ---
 
@@ -108,13 +120,13 @@ Clean up: `rm .ai-team/.active`
 
 > "Investigation complete. [Brief summary]
 >
-> Want me to dig deeper, or should we scope a fix for something?"
+> Want me to dig deeper, or should we scope a fix?"
 
 ---
 
-## BUG PATH
+## BUG PATH (Light Pipeline)
 
-For known broken behavior that needs fixing.
+For known broken behavior. Lightweight: 2-3 agent calls.
 
 ### Setup
 
@@ -128,16 +140,12 @@ Check git state, offer branch (`fix/$NAME` or stay on current).
 
 ### Understand the bug
 
-Before planning a fix, make sure we understand the problem.
-Read the relevant code. If the cause is unclear, investigate briefly
-(like the investigation path) to understand root cause.
+Before planning, read the relevant code to understand root cause.
+If the cause is unclear, investigate briefly.
 
-Show what you find:
-> "I can see the issue: [explanation]. Here's my plan to fix it."
+### Scope (PO on Sonnet — lightweight)
 
-### Scope (lightweight)
-
-Spawn **product-owner** (Opus):
+Spawn **product-owner** with **model: sonnet**:
 > "MODE 1: Discovery & Requirements.
 > This is a BUG FIX — keep it minimal.
 > Bug: $DESCRIPTION
@@ -149,34 +157,83 @@ Spawn **product-owner** (Opus):
 **PAUSE only if** PO has questions. If the bug is clear-cut, PO writes the SOW
 immediately without asking questions.
 
-### Plan (lightweight)
+### Plan (SE on Opus — lightweight)
 
 Spawn **software-engineer** (Opus) MODE 1:
 > "BUG FIX: $NAME. Read .ai-team/$NAME/sow.md.
 > Plan should be 1-2 phases max: fix + test.
 > Save to .ai-team/$NAME/technical-plan.md."
 
-**Skip** DevSecOps plan review and structure check for bug fixes.
+**Skip** feasibility check, UX review, DevSecOps plan review, structure check.
 Auto-approve: create `.ai-team/$NAME/plan-approved.md`.
 
-> "Bug fix planned.
->
-> [Show the fix approach + acceptance criteria]
+> "Bug fix planned. [Show the fix approach + ACs]
 >
 > 1. `/build-phase all` — fix it now
-> 2. Review the plan first: `.ai-team/$NAME/technical-plan.md`"
+> 2. Review the plan first"
 
 ---
 
-## FEATURE PATH
+## SMALL FEATURE PATH (Light Pipeline)
 
-Full planning pipeline for new functionality.
+For isolated changes: 1-3 files, no architecture decisions. 3-4 agent calls.
+
+### Setup
+
+Derive name. Prefix: `feature/`.
+```bash
+mkdir -p .ai-team/$FEATURE_NAME
+echo "$FEATURE_NAME" > .ai-team/.active
+```
+
+Offer git branch.
+
+### Scope (PO on Sonnet)
+
+Spawn **product-owner** with **model: sonnet**:
+> "MODE 1: Discovery & Requirements.
+> This is a SMALL feature — keep scope tight, max 2-3 questions.
+> Feature: $DESCRIPTION
+> Write a focused SOW with clear ACs.
+> Save to .ai-team/$FEATURE_NAME/sow.md"
+
+**PAUSE** — wait for user if PO has questions.
+
+### Plan (SE on Opus)
+
+Spawn **software-engineer** (Opus) MODE 1:
+> "Feature: $FEATURE_NAME. Read .ai-team/$FEATURE_NAME/sow.md.
+> This is a small feature — plan should be 1-3 phases.
+> Save to .ai-team/$FEATURE_NAME/technical-plan.md."
+
+### Quick Review (DevSecOps on Sonnet — conditional)
+
+**Only if** the change touches auth, user input, API endpoints, or data handling.
+Otherwise skip.
+
+Spawn **devsecops** (Sonnet) MODE 1:
+> "Quick review of .ai-team/$FEATURE_NAME/technical-plan.md.
+> Flag only CRITICAL security concerns. Keep it brief.
+> Save to .ai-team/$FEATURE_NAME/devsecops-plan-review.md."
+
+**Skip** feasibility check, UX review, triage structure check, PO plan approval.
+Auto-approve: create `.ai-team/$FEATURE_NAME/plan-approved.md`.
+
+> "Small feature planned. [Show phases + ACs]
+>
+> 1. `/build-phase all` — build it
+> 2. Review the plan first"
+
+---
+
+## LARGE FEATURE PATH (Full Pipeline)
+
+New subsystems, multi-component work, architecture decisions. 6-8 agent calls.
 
 ### Step 0: Setup
 
-Derive a short, descriptive kebab-case name from $ARGUMENTS (2-4 words).
-Check `ls .ai-team/` for conflicts — append differentiator if needed.
-Prefix: `feature/`.
+Derive a short, descriptive kebab-case name (2-4 words).
+Check `ls .ai-team/` for conflicts. Prefix: `feature/`.
 
 ```bash
 mkdir -p .ai-team/$FEATURE_NAME
@@ -185,20 +242,13 @@ echo "$FEATURE_NAME" > .ai-team/.active
 
 ### Step 0.5: Git Branch
 
-Check current git state:
-```bash
-git branch --show-current
-git status --porcelain
-git branch --list --sort=-committerdate | head -10
-```
-
-Offer to create a branch or stay on current.
+Check git state, offer branch, show recent branches for context.
 
 ### Step 1: Quick Context Scan
 
 **SKIP if** user referenced specific files or gave very detailed context.
 
-Otherwise, spawn **triage** (Haiku):
+Spawn **triage** (Haiku):
 > "MODE: research.
 > Feature description: $DESCRIPTION
 > Budget: 5 file reads max. Be fast."
@@ -210,62 +260,39 @@ Spawn the **product-owner** (Opus):
 > Feature: $FEATURE_NAME — Description: $DESCRIPTION
 > Feature directory: .ai-team/$FEATURE_NAME/
 >
-> Research context: {triage output or 'skipped — user provided detailed context'}
+> Research context: {triage output or 'skipped'}
 >
 > Explore the codebase, ask focused questions (3-5 at a time),
 > shape scope (must have / V2 / say no), then generate SOW.
 > Save to .ai-team/$FEATURE_NAME/sow.md"
 
-**PAUSE** — Wait for user to respond to PO's questions.
+**PAUSE** — Wait for user.
 
-### Step 2.5: Quick Reviews on SOW (CONDITIONAL, parallel)
+### Step 2.5: Quick Reviews on SOW (parallel)
 
-Before the SE writes a full technical plan, run quick reviews on the SOW.
-These run in parallel when both apply.
+**SE Feasibility Check** (Sonnet):
 
-**SE Feasibility Check** — always run for features:
-
-Spawn **software-engineer** with **model: sonnet** (quick scan, not full planning):
+Spawn **software-engineer** with **model: sonnet**:
 > "MODE: feasibility-check. Read .ai-team/$FEATURE_NAME/sow.md.
-> Quick scan of the codebase for relevant code. DON'T write a full plan yet.
-> Flag:
-> - Existing code/services that already do part of this
-> - Dependencies or migrations that affect other features
-> - Scope that's bigger (or smaller) than it sounds
-> - Technical risks or blockers
-> - Simpler alternatives the PO should consider
-> Keep it brief — 5-10 bullet points max.
+> Quick scan of the codebase. DON'T write a full plan.
+> Flag: existing code, dependencies, scope sizing, risks, simpler alternatives.
+> 5-10 bullet points max.
 > Save to .ai-team/$FEATURE_NAME/feasibility-check.md"
 
-**UX Scope Review** — only if the SOW includes UI/UX work (user-facing screens,
-forms, components, dashboards, notifications). Skip for backend, data, API-only,
-infrastructure, or investigation tasks.
+**UX Scope Review** (Sonnet) — only if the SOW includes UI work:
 
 Spawn **ux-designer** (Sonnet):
 > "Review .ai-team/$FEATURE_NAME/sow.md for UX concerns.
-> Check existing UI patterns in the codebase.
-> Flag missing states, accessibility gaps, and user flow issues.
-> Suggest any UX-specific acceptance criteria to add.
+> Flag missing states, accessibility gaps, user flow issues.
 > Save to .ai-team/$FEATURE_NAME/ux-scope-review.md"
 
-**Present findings to user:**
-
-> "Before we plan, the team flagged a few things:
->
-> **Technical:**
-> [key points from feasibility-check.md]
->
-> **UX:** (if applicable)
-> [key points from ux-scope-review.md]
->
-> Want to adjust the scope based on any of this?"
-
-If user wants changes → ask PO to update the SOW.
+Present findings, ask if user wants to adjust scope.
 
 ### Step 3: Software Engineer — Technical Plan
 
 Spawn **software-engineer** (Opus) MODE 1:
 > "Feature: $FEATURE_NAME. Read .ai-team/$FEATURE_NAME/sow.md.
+> Also read feasibility-check.md and ux-scope-review.md if they exist.
 > Explore codebase. Create technical plan with implementation phases.
 > Save to .ai-team/$FEATURE_NAME/technical-plan.md."
 
@@ -275,15 +302,14 @@ Spawn **devsecops** (Sonnet) MODE 1:
 > "Review .ai-team/$FEATURE_NAME/technical-plan.md against sow.md.
 > Save to .ai-team/$FEATURE_NAME/devsecops-plan-review.md."
 
-If BLOCKERS -> present them before PO review.
+If BLOCKERS -> present before PO review.
 
 ### Step 4.5: MLOps — Plan Review (CONDITIONAL)
 
-**Only run if:** `.claude/stack.md` lists MLOps, OR the feature involves
-ML training, inference, data pipelines, or experiment tracking.
+**Only if** `.claude/stack.md` lists MLOps, OR feature involves ML.
 
 Spawn **mlops** (Sonnet) MODE 1:
-> "Review .ai-team/$FEATURE_NAME/technical-plan.md for ML-specific concerns.
+> "Review .ai-team/$FEATURE_NAME/technical-plan.md for ML concerns.
 > Save to .ai-team/$FEATURE_NAME/mlops-plan-review.md."
 
 ### Step 5: Plan Structure Check
@@ -292,12 +318,12 @@ Spawn **triage** (Haiku):
 > "MODE: plan-structure-check. Feature: $FEATURE_NAME. Docs: .ai-team/$FEATURE_NAME/"
 
 If INCOMPLETE -> send back to SE.
-If STRUCTURALLY_COMPLETE -> proceed.
 
-### Step 6: Product Owner — Plan Review
+### Step 6: Product Owner — Plan Approval
 
-Spawn **product-owner** (Opus) MODE 2:
-> "Review .ai-team/$FEATURE_NAME/technical-plan.md against sow.md.
+Spawn **product-owner** with **model: sonnet**:
+> "MODE 2: Plan Review.
+> Review .ai-team/$FEATURE_NAME/technical-plan.md against sow.md.
 > If approved, create .ai-team/$FEATURE_NAME/plan-approved.md."
 
 ### Step 7: Present Results

@@ -7,10 +7,14 @@
 
 **`/scope [describe what you need]`** — the only command you need to remember.
 
-It detects what you're asking for:
-- **Investigation** → works directly, shows findings, no planning pipeline
-- **Bug fix** → lightweight SOW, quick plan, auto-approve → ready to build
-- **Feature** → full pipeline: PO discovery → SE plan → reviews → approval
+It detects what you're asking for and right-sizes the pipeline:
+
+| Type | Pipeline | Agent Calls | What Runs |
+|------|----------|-------------|-----------|
+| Investigation | Direct | 0 | Just works in session, no subagents |
+| Bug fix | Light | 2-3 | PO(Sonnet) → SE(Opus) |
+| Small feature | Light | 3-4 | PO(Sonnet) → SE(Opus) → DevSecOps? |
+| Large feature | Full | 6-8 | Triage → PO(Opus) → SE+UX → SE(Opus) → reviews → approval |
 
 ## Agents
 
