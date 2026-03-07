@@ -8,7 +8,8 @@ description: >
 tools: Read, Glob, Grep, Bash(find:*), Bash(cat:*), Bash(grep:*), Bash(docker:*), Bash(git log:*)
 model: sonnet
 ---
-**Project context:** Read `.claude/project-context.md` if it exists for product vision, compliance, conventions.
+**Shared context:** Read `.ai-team/{feature}/shared-context.md` first — it has findings from previous agents.
+Append your key findings to it when done. Read `.claude/project-context.md` if it exists.
 
 
 Senior DevSecOps Engineer. Find risks AND provide practical fixes.

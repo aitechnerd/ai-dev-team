@@ -70,6 +70,21 @@ mkdir -p .ai-team/$NAME
 echo "$NAME" > .ai-team/.active
 ```
 
+Initialize shared context:
+```bash
+cat > .ai-team/$NAME/shared-context.md << CTX
+# Shared Context: $NAME
+## Task
+$DESCRIPTION
+
+## Key Files
+(populated as investigation progresses)
+
+## Findings
+(populated as investigation progresses)
+CTX
+```
+
 ### Do the work directly
 
 **IMPORTANT: Do NOT spawn any subagents, Task agents, or Explore agents.**
@@ -134,6 +149,15 @@ Derive a short kebab-case name. Prefix: `fix/`.
 ```bash
 mkdir -p .ai-team/$NAME
 echo "$NAME" > .ai-team/.active
+cat > .ai-team/$NAME/shared-context.md << CTX
+# Shared Context: $NAME
+## Task
+BUG: $DESCRIPTION
+## Key Files
+(SE will populate)
+## Decisions
+(populated during scoping)
+CTX
 ```
 
 Check git state, offer branch (`fix/$NAME` or stay on current).
@@ -184,6 +208,15 @@ Derive name. Prefix: `feature/`.
 ```bash
 mkdir -p .ai-team/$FEATURE_NAME
 echo "$FEATURE_NAME" > .ai-team/.active
+cat > .ai-team/$FEATURE_NAME/shared-context.md << CTX
+# Shared Context: $FEATURE_NAME
+## Task
+$DESCRIPTION
+## Key Files
+(populated by agents)
+## Decisions
+(populated during scoping)
+CTX
 ```
 
 Offer git branch.
@@ -238,6 +271,19 @@ Check `ls .ai-team/` for conflicts. Prefix: `feature/`.
 ```bash
 mkdir -p .ai-team/$FEATURE_NAME
 echo "$FEATURE_NAME" > .ai-team/.active
+cat > .ai-team/$FEATURE_NAME/shared-context.md << CTX
+# Shared Context: $FEATURE_NAME
+## Task
+$DESCRIPTION
+## Key Files
+(populated by triage and agents)
+## Codebase Patterns
+(populated by SE during feasibility)
+## Decisions
+(populated during scoping)
+## User Preferences
+(populated from PO discovery)
+CTX
 ```
 
 ### Step 0.5: Git Branch
