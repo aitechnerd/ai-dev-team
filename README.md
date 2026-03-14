@@ -1,195 +1,175 @@
 # AI Dev Team
 
-> An AI-powered development team for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). 9 specialized sub-agents handle planning, implementation, code review, security, QA, and refactoring — you focus on **what** to build, the team handles **how**.
+> 9 specialized AI agents for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Planning, implementation, code review, security, QA, and refactoring — you focus on **what** to build, the team handles **how**.
 
-Works alongside normal Claude Code. Use the full pipeline for big features, or just run `/review` or `/qa-check` on code you wrote yourself.
+Works alongside normal Claude Code. Use the full pipeline for big features, or just the standalone skills on code you wrote yourself.
 
-## Quick Start
+## Install
+
+### Step 1: Clone and install globally
 
 ```bash
-# Install
-brew tap aitechnerd/ai-dev-team
-brew install ai-dev-team
-ai-team install
-
-# Set up a project
-cd ~/your-project
-ai-team project
-
-# In Claude Code
-/detect                                          # detect stack, generate config
-/scope why are lab results missing               # auto-detects: investigation
-/scope Fix the timeout on slow connections           # auto-detects: bugfix
-/scope Add patient search with fuzzy matching        # auto-detects: feature → full pipeline
-/build-phase all                                 # build it autonomously
-/ship                                            # create a draft PR
+git clone https://github.com/aitechnerd/ai-dev-team.git ~/.ai-team
+bash ~/.ai-team/install.sh global
 ```
+
+This copies agents, skills, stack profiles, and scripts to `~/.claude/` — available in every project.
+
+### Step 2: Set up a project
+
+```bash
+cd ~/your-project
+bash ~/.ai-team/install.sh project
+```
+
+Creates `.claude/settings.json`, `.claude/ai-team.md`, `CLAUDE.md`, `.ai-team/`, and configures `.gitignore`.
+
+### Step 3: Run /setup in Claude Code
+
+```
+/setup
+```
+
+One command that does everything:
+1. **Detects stack** — languages, frameworks, test/build/lint commands, scanners → `.claude/stack.md`
+2. **Asks about your product** — vision, architecture, compliance, conventions → `.claude/project-context.md`
+3. **Maps the codebase** — modules, key files, entry points, naming conventions → `.claude/codemap.md`
+4. **Validates setup** — checks all config, auto-fixes what it can, reports status
+
+After this, Claude never re-discovers your project — it reads the context files instead.
+
+### Update
+
+```bash
+bash ~/.ai-team/install.sh update
+```
+
+Pulls latest from git and re-installs globally. All projects pick up new agents/skills automatically.
+
+### Check status
+
+```bash
+bash ~/.ai-team/install.sh status
+```
+
+## Usage
+
+### Full pipeline (features)
+
+```bash
+/scope Add patient search with fuzzy matching   # PO scopes → SE plans → PO approves
+/build-phase all                                 # autonomous: build → review → QA → fix
+/ship                                            # create draft PR
+```
+
+### Standalone skills (no pipeline needed)
+
+```bash
+/review            # code review on current branch
+/qa-check          # QA validation on current changes
+/sec-check         # security review
+/health            # code health assessment
+/retro             # weekly engineering retrospective
+/qa-browser        # Playwright-based browser QA
+```
+
+### Auto-triggered skills (activate when relevant)
+
+These load automatically based on what you're doing — no slash command needed:
+
+| Skill | Triggers when... |
+|-------|------------------|
+| `systematic-debugging` | Bug, test failure, unexpected behavior |
+| `test-driven-development` | Implementing a feature or fix |
+| `git-mastery` | Git operations (commit, merge, rebase) |
+| `python-pro` | Writing Python code |
+| `rust-engineer` | Writing Rust code |
+| `sql-pro` | Writing SQL, optimizing queries |
+| `database-optimizer` | Investigating slow queries |
+| `secure-code-guardian` | Implementing auth, input handling |
+| `test-master` | Writing tests |
+| `debugging-wizard` | Investigating errors |
 
 ## The Pipeline
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  /scope                              SMART TASK ROUTER      │
-│                                                             │
-│  Investigation? → work directly, no subagents (0 calls)     │
-│  Bug fix? → PO(Sonnet) + SE(Opus), auto-approve (2-3 calls)│
-│  Small feature? → PO(Sonnet) + SE(Opus) + DevSecOps?       │
-│                    auto-approve (3-4 calls)                 │
-│  Large feature? ↓ full pipeline (6-8 calls)                 │
-│                                                             │
-│  Triage (Haiku) → PO (Opus) → SE+UX feasibility (Sonnet)   │
-│  → SE plan (Opus) → DevSecOps → PO approval (Sonnet)       │
-├─────────────────────────────────────────────────────────────┤
-│  /build-phase all                          AUTONOMOUS       │
-│                                                             │
-│  SE implements each phase + auto-commit + checkpoint        │
-│  Scanners → Triage parses results                           │
-│  Code Reviewer + DevSecOps (parallel)                       │
-│  QA validates → SE fixes if needed (2 rounds)               │
-│  Second-pass review (critical/high only)                    │
-│  Code Health refactors + simplifies                         │
-├─────────────────────────────────────────────────────────────┤
-│  /ship                                     YOU DECIDE       │
-│                                                             │
-│  Generates PR description → creates draft PR                │
-└─────────────────────────────────────────────────────────────┘
+/scope [description]
+  │
+  ├─ PO: discovery → scope → SOW
+  ├─ SE: technical plan
+  ├─ DevSecOps: plan review
+  └─ PO: approve or reject
+      │
+/build-phase all
+  │
+  ├─ SE: implement each phase + auto-commit
+  ├─ Scanners: semgrep, gitleaks, trivy, etc.
+  ├─ Code Reviewer + DevSecOps (parallel)
+  ├─ QA: validate → SE fixes if needed (2 rounds)
+  ├─ Code Health: refactor + simplify
+  └─ PO: completion summary
+      │
+/ship → draft PR
 ```
 
 ## Agents
 
 | Agent | Model | Role |
 |-------|-------|------|
-| **product-owner** | Opus | Scope discovery, SOW, plan approval, feature summaries |
-| **software-engineer** | Opus | Technical plans, implementation across all stacks |
-| **code-reviewer** | Sonnet | Quality, correctness, over-engineering detection |
-| **devsecops** | Sonnet | Security review, OWASP scanning, compliance |
-| **qa-engineer** | Sonnet | Acceptance criteria validation, edge cases, test gaps |
-| **ux-designer** | Sonnet | Design review, accessibility, UX heuristics |
-| **code-health** | Sonnet | Post-feature refactoring, tech debt, dependency updates |
-| **mlops** | Sonnet | ML pipeline review, model deployment (optional, auto-detected) |
-| **triage** | Haiku | Fast preprocessing — research, scan parsing, diff summaries |
+| **product-owner** | Opus | Scope, SOW, plan approval, completion summaries |
+| **software-engineer** | Opus | Technical plans, implementation, fixes |
+| **code-reviewer** | Sonnet | Quality, correctness, over-engineering |
+| **devsecops** | Sonnet | Security review, OWASP, compliance |
+| **qa-engineer** | Sonnet | AC validation, edge cases, test gaps |
+| **ux-designer** | Sonnet | Design review, accessibility |
+| **code-health** | Sonnet | Refactoring, tech debt, dependencies |
+| **mlops** | Sonnet | ML pipelines, model deployment (auto-detected) |
+| **triage** | Haiku | Fast preprocessing — scan parsing, diff summaries |
+
+Agents with `memory: project` (code-reviewer, qa-engineer, software-engineer, devsecops, code-health) learn your codebase patterns, working commands, and conventions across sessions.
 
 ## Commands
 
-### Planning (use /scope to start)
-
 | Command | Description |
 |---------|-------------|
-| `/scope [description]` | Smart entry point: auto-detects investigation vs bugfix vs feature |
-| `/approve-plan` | Manually approve a plan (skip PO review) |
-| `/features` | List all features and their status |
+| **Planning** | |
+| `/scope [description]` | Smart entry point — auto-detects task size |
+| `/approve-plan` | Manually approve a plan |
+| `/features` | List all features and status |
 | `/switch [name]` | Switch active feature |
-
-### Setup (once per project)
-
-| Command | Description |
-|---------|-------------|
-| `/detect` | Detect project stack, generate `.claude/stack.md` |
-| `/setup` | Create persistent project context (vision, conventions, compliance) |
-| `/fresh` | Reset feature state, deactivate plan gate |
-
-### Building (after /scope)
-
-| Command | Description |
-|---------|-------------|
-| `/build-phase [N\|all]` | Build phases. `all` = full autonomous pipeline |
-| `/validate` | Run validation pipeline on current feature |
+| **Setup** | |
+| `/setup` | Full onboarding: stack + context + codemap |
+| `/fresh` | Reset feature state |
+| **Building** | |
+| `/build-phase [N\|all]` | Build phases. `all` = autonomous pipeline |
+| `/validate` | Run validation pipeline |
 | `/scan` | Run security scanners |
-
-### Review (standalone — no /scope needed)
-
-| Command | Description |
-|---------|-------------|
-| `/review` | Full code review + security on any branch |
-| `/qa-check` | QA validation on current changes |
-| `/sec-check` | Security review on current changes |
+| **Review** | |
+| `/review` | Code review on any branch |
+| `/qa-check` | QA on current changes |
+| `/sec-check` | Security review |
 | `/design-review` | UX/accessibility review |
-
-### Shipping
-
-| Command | Description |
-|---------|-------------|
-| `/ship` | Generate PR description, create draft PR |
-| `/health` | Code health check, refactoring, dependency updates |
-| `/revert [phase N\|feature\|last]` | Semantic undo by logical unit |
-
-### Info
-
-| Command | Description |
-|---------|-------------|
-| `/team` | Show all agents, commands, and workflows |
-
-## When to Use This vs Default Claude Code
-
-| Situation | Approach |
-|-----------|----------|
-| Bug fix, small change | Just use Claude Code normally |
-| Investigation, data audit | `/scope` → auto-detects, works directly (0 agent calls) |
-| Quick review of your code | `/review`, `/qa-check`, or `/sec-check` |
-| Bug fix (known broken behavior) | `/scope` → light pipeline (2-3 agent calls) |
-| Small feature (1-3 files) | `/scope` → light pipeline (3-4 agent calls) |
-| Large feature (new subsystem) | `/scope` → full pipeline (6-8 agent calls) |
-
-The hooks are designed to stay out of your way. When no feature is active (`.ai-team/.active` doesn't exist), both hooks do nothing — Claude Code works exactly as normal.
+| **Shipping** | |
+| `/ship` | Create draft PR |
+| `/health` | Code health, refactoring, deps |
+| `/revert [phase N\|feature\|last]` | Semantic undo |
+| `/retro` | Engineering retrospective |
+| `/qa-browser` | Playwright browser QA |
 
 ## Stack Support
 
-All agents adapt to your project's language. Stack profiles provide testing commands, security checks, architecture patterns, and code review focus areas.
+All agents adapt to your project's language via stack profiles.
 
 | Stack | Detected By | Scanners |
 |-------|-------------|----------|
-| **Rust** | `Cargo.toml` | cargo-audit, cargo-deny, cargo-clippy, cargo-geiger |
-| **Ruby on Rails** | `Gemfile` | Brakeman, bundler-audit, RuboCop |
-| **Python** | `requirements.txt`, `pyproject.toml` | Bandit, pip-audit, ruff/mypy |
-| **React / TypeScript** | `package.json` | npm audit, ESLint |
-| **PHP / Laravel** | `composer.json` | PHPStan, Composer audit, PHP-CS-Fixer |
-| **MLOps** | torch/tensorflow in deps | All Python scanners + ML-specific checks |
+| Rust | `Cargo.toml` | cargo-audit, cargo-deny, clippy |
+| Rails | `Gemfile` | Brakeman, bundler-audit, RuboCop |
+| Python | `requirements.txt`, `pyproject.toml` | Bandit, pip-audit, ruff |
+| React/TS | `package.json` | npm audit, ESLint |
+| PHP | `composer.json` | PHPStan, Composer audit |
+| MLOps | torch/tensorflow in deps | Python scanners + ML checks |
 
-Plus language-agnostic: **Semgrep** (SAST), **Gitleaks** (secrets), **Trivy** (CVEs), **Hadolint** (Dockerfiles).
-
-## Installation
-
-### Option A: Homebrew (recommended)
-
-```bash
-brew tap aitechnerd/ai-dev-team
-brew install ai-dev-team
-ai-team install
-```
-
-### Option B: Git Clone
-
-```bash
-git clone https://github.com/aitechnerd/ai-dev-team.git ~/.ai-team
-cd ~/.ai-team
-bash install.sh global
-```
-
-### Set Up a Project
-
-```bash
-cd ~/your-project
-ai-team project
-```
-
-Then in Claude Code:
-```
-/detect          # Detect stack, generate .claude/stack.md
-/setup           # (Optional) Create project context for all agents
-```
-
-### Update
-
-```bash
-ai-team update                  # Homebrew
-# or
-cd ~/.ai-team && bash install.sh update   # Git clone
-```
-
-### Install Scanners (optional)
-
-Run `/detect` in Claude Code — it checks what's missing and gives you
-the exact `pip install` / `brew install` commands to copy-paste.
+Plus: Semgrep (SAST), Gitleaks (secrets), Trivy (CVEs), Hadolint (Dockerfiles).
 
 ## What Gets Installed Where
 
@@ -197,63 +177,48 @@ the exact `pip install` / `brew install` commands to copy-paste.
 
 ```
 ~/.claude/
-├── agents/       # 9 agent definitions
-├── commands/     # 18 slash commands
-├── stacks/       # 6 language profiles
-└── scripts/      # Scanner runner, hooks, helpers
+├── agents/       9 agent definitions
+├── skills/       30 skills (with reference docs)
+├── stacks/       6 language profiles
+├── scripts/      pipeline hooks + scanner runner
+└── ai-team.md    team reference
 ```
 
-### Per-Project — created by `ai-team project`
+### Per-project — created by `bash install.sh project`
 
 ```
 your-project/
 ├── .claude/
-│   ├── settings.json       # Hook config (auto-updated by installer)
-│   ├── ai-team.md          # Team system reference (auto-updated by installer)
-│   ├── stack.md            # Generated by /detect
-│   └── project-context.md  # Generated by /setup (optional)
-├── .ai-team/               # Feature docs — auto-gitignored
-│   ├── .active             # Current feature name
-│   └── patient-search/     # Feature artifacts (SOW, plan, reviews)
-├── .gitignore              # .ai-team/ added automatically
-└── CLAUDE.md               # YOUR project conventions (never overwritten)
+│   ├── settings.json         hooks config
+│   ├── ai-team.md            team reference
+│   ├── stack.md              generated by /setup (gitignored)
+│   ├── project-context.md    generated by /setup (gitignored)
+│   └── codemap.md            generated by /setup (gitignored)
+├── .ai-team/                 feature docs (gitignored)
+├── .gitignore                auto-configured
+└── CLAUDE.md                 your project conventions
 ```
 
-## Token Cost Model
+### Agent memory — learned per-project
 
-The system right-sizes the pipeline based on task complexity:
+Agents with `memory: project` build up knowledge in `.claude/agent-memory/<agent>/`:
+- Working commands (test, build, lint, deploy)
+- Codebase patterns and conventions
+- Common issues and fixes
 
-| Task Type | Opus Calls | Sonnet Calls | Haiku Calls |
-|-----------|-----------|-------------|-------------|
-| Investigation | 0 | 0 | 0 |
-| Bug fix | 1 (SE plan) | 1 (PO scope) | 0 |
-| Small feature | 1 (SE plan) | 1-2 (PO + DevSecOps?) | 0 |
-| Large feature | 2 (PO + SE plan) | 3-4 (feasibility + reviews + approval) | 2 (triage) |
+This is gitignored — it's per-machine knowledge.
 
-Additional savings:
-- **Haiku triage** — cheap preprocessing before expensive models
-- **Conditional skipping** — UX only for UI features, DevSecOps only for security-relevant changes, MLOps only for ML projects
-- **Sonnet for structured work** — PO scoping for bugs/small features, feasibility checks, plan approval
-- **Opus only for deep work** — PO discovery on large features, SE architecture planning
+## When to Use This vs Default Claude Code
 
-## Project Structure
+| Situation | Use |
+|-----------|-----|
+| Quick fix, small change | Claude Code normally |
+| Review code you wrote | `/review`, `/qa-check`, `/sec-check` |
+| Bug fix | `/scope` → light pipeline (2-3 agent calls) |
+| Small feature | `/scope` → medium pipeline (3-4 calls) |
+| Large feature | `/scope` → full pipeline (6-8 calls) |
 
-```
-ai-dev-team/
-├── .claude/
-│   ├── agents/           # 9 agent definitions
-│   ├── commands/         # 18 slash commands
-│   ├── stacks/           # 6 language profiles (rust, rails, python, react, php, mlops)
-│   ├── scripts/          # Hook scripts + scanner runner
-│   └── settings.json     # Hook config template
-├── CLAUDE.md             # Project conventions template
-├── install.sh            # Installer (global/project/update/status)
-├── release.sh            # Automated release script
-├── VERSION
-├── CHANGELOG.md
-├── LICENSE
-└── README.md
-```
+When no feature is active, the hooks do nothing — Claude Code works exactly as normal.
 
 ## License
 

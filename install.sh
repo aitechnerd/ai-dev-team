@@ -25,7 +25,7 @@ show_usage() {
     echo "Usage: bash install.sh [command]"
     echo ""
     echo "Commands:"
-    echo "  global       Install/update agents, commands, stacks to ~/.claude/"
+    echo "  global       Install/update agents, skills, stacks to ~/.claude/"
     echo "  project      Set up current project: settings.json, CLAUDE.md"
     echo "  full         Global install + project setup (first time)"
     echo "  update       Pull latest from git + reinstall globally"
@@ -47,6 +47,7 @@ install_global() {
 
     mkdir -p "$TARGET/agents" "$TARGET/scripts" "$TARGET/stacks"
 
+    # --- Agents ---
     echo "📋 Agents..."
     for agent in product-owner software-engineer ux-designer qa-engineer code-reviewer devsecops triage mlops code-health; do
         if [ -f "$SCRIPT_DIR/.claude/agents/$agent.md" ]; then
@@ -57,18 +58,28 @@ install_global() {
         fi
     done
 
+    # --- Skills (copy entire directories including references/) ---
     echo ""
     echo "📋 Skills..."
-    for skill in scope build-phase validate features switch scan detect ship health review setup revert design-review approve-plan fresh team qa-check sec-check; do
-        if [ -f "$SCRIPT_DIR/.claude/skills/$skill/SKILL.md" ]; then
-            mkdir -p "$TARGET/skills/$skill"
-            cp -f "$SCRIPT_DIR/.claude/skills/$skill/SKILL.md" "$TARGET/skills/$skill/"
-            ok "/$skill"
-        else
-            warn "$skill/SKILL.md not found in package"
-        fi
-    done
+    local skill_count=0
+    if [ -d "$SCRIPT_DIR/.claude/skills" ]; then
+        for skill_dir in "$SCRIPT_DIR/.claude/skills"/*/; do
+            local skill_name=$(basename "$skill_dir")
+            if [ -f "$skill_dir/SKILL.md" ]; then
+                # Copy entire skill directory (SKILL.md + references/ + templates/ + scripts/ + examples/)
+                mkdir -p "$TARGET/skills/$skill_name"
+                cp -rf "$skill_dir"* "$TARGET/skills/$skill_name/" 2>/dev/null || true
+                # Also copy hidden files if any
+                cp -rf "$skill_dir".* "$TARGET/skills/$skill_name/" 2>/dev/null || true
+                skill_count=$((skill_count + 1))
+            fi
+        done
+        ok "$skill_count skills installed"
+    else
+        warn "No skills directory found"
+    fi
 
+    # --- Stack profiles ---
     echo ""
     echo "📋 Stack profiles..."
     for stack in rust rails python react php mlops; do
@@ -78,26 +89,29 @@ install_global() {
         fi
     done
 
+    # --- Scripts ---
     echo ""
     echo "📋 Scripts..."
     cp -f "$SCRIPT_DIR/.claude/scripts/"*.py "$TARGET/scripts/" 2>/dev/null && true
     cp -f "$SCRIPT_DIR/.claude/scripts/"*.sh "$TARGET/scripts/" 2>/dev/null && true
     chmod +x "$TARGET/scripts/"*.py "$TARGET/scripts/"*.sh 2>/dev/null || true
+    ok "Pipeline scripts"
 
+    # --- Team reference ---
     echo ""
     echo "📋 Team reference..."
     cp -f "$SCRIPT_DIR/.claude/ai-team.md" "$TARGET/ai-team.md"
-    ok "ai-team.md (team system docs)"
+    ok "ai-team.md"
 
     echo ""
     echo -e "${GREEN}Global install complete.${NC}"
     echo ""
     echo "Installed to: $TARGET"
-    echo "  agents/    — 9 agents (Opus: PO + SE, Haiku: triage, Sonnet: rest)"
-    echo "  skills/    — 18 slash commands"
+    echo "  agents/    — 9 agents"
+    echo "  skills/    — $skill_count skills (with reference docs)"
     echo "  stacks/    — 6 language profiles"
-    echo "  scripts/   — scanner runner + hooks"
-    echo "  ai-team.md — team system reference"
+    echo "  scripts/   — pipeline hooks"
+    echo "  ai-team.md — team reference"
 }
 
 # ============================================================
@@ -119,15 +133,39 @@ setup_project() {
     mkdir -p ".ai-team"
     ok ".ai-team/ directory ready"
 
-    # .gitignore — add .ai-team/ if not already present
+    # .gitignore — add generated files if not already present
+    local gitignore_entries=(
+        ".ai-team/"
+        ".claude/stack.md"
+        ".claude/project-context.md"
+        ".claude/codemap.md"
+        ".claude/settings.local.json"
+        ".claude/agent-memory/"
+        ".claude/agent-memory-local/"
+    )
+
     if [ -f ".gitignore" ]; then
-        if ! grep -q '\.ai-team' .gitignore 2>/dev/null; then
-            printf "\n# AI Dev Team (generated feature docs)\n.ai-team/\n" >> .gitignore
-            ok ".gitignore updated (added .ai-team/)"
+        local added=0
+        for entry in "${gitignore_entries[@]}"; do
+            if ! grep -qF "$entry" .gitignore 2>/dev/null; then
+                if [ $added -eq 0 ]; then
+                    printf "\n# AI Dev Team (generated, per-project)\n" >> .gitignore
+                    added=1
+                fi
+                echo "$entry" >> .gitignore
+            fi
+        done
+        if [ $added -eq 1 ]; then
+            ok ".gitignore updated"
+        else
+            info ".gitignore already configured"
         fi
     else
-        printf "# AI Dev Team (generated feature docs)\n.ai-team/\n" > .gitignore
-        ok ".gitignore created (with .ai-team/)"
+        printf "# AI Dev Team (generated, per-project)\n" > .gitignore
+        for entry in "${gitignore_entries[@]}"; do
+            echo "$entry" >> .gitignore
+        done
+        ok ".gitignore created"
     fi
 
     # settings.json — hooks config (project-level only)
@@ -136,29 +174,30 @@ setup_project() {
         ok "settings.json (hooks config)"
     elif ! diff -q "$SCRIPT_DIR/.claude/settings.json" "$TARGET/settings.json" > /dev/null 2>&1; then
         cp "$SCRIPT_DIR/.claude/settings.json" "$TARGET/settings.json"
-        ok "settings.json updated to latest version"
+        ok "settings.json updated"
     else
         info "settings.json already up to date"
     fi
 
     # .claude/ai-team.md — team system reference (always updated)
     cp "$SCRIPT_DIR/.claude/ai-team.md" "$TARGET/ai-team.md"
-    ok "ai-team.md (team system reference — always kept up to date)"
+    ok "ai-team.md"
 
     # CLAUDE.md — project conventions (user-owned, created once)
     if [ ! -f "CLAUDE.md" ]; then
         cp "$SCRIPT_DIR/CLAUDE.md" "./CLAUDE.md"
-        ok "CLAUDE.md → project root (edit this with your project conventions)"
+        ok "CLAUDE.md → project root (edit with your project conventions)"
     else
         # Check if CLAUDE.md references ai-team.md — add if missing
         if ! grep -q 'ai-team.md' CLAUDE.md 2>/dev/null; then
-            # Prepend the reference line at the top
             local tmp=$(mktemp)
             echo 'Read `.claude/ai-team.md` for the AI Dev Team system reference.' > "$tmp"
             echo "" >> "$tmp"
             cat CLAUDE.md >> "$tmp"
             mv "$tmp" CLAUDE.md
-            ok "CLAUDE.md updated (added ai-team.md reference at top)"
+            ok "CLAUDE.md updated (added ai-team.md reference)"
+        else
+            info "CLAUDE.md already configured"
         fi
     fi
 
@@ -166,7 +205,7 @@ setup_project() {
     echo -e "${GREEN}Project setup complete.${NC}"
     echo ""
     echo "Next steps:"
-    echo "  1. In Claude Code, run:  /detect          # Detect stack, check setup, install scanners"
+    echo "  1. In Claude Code, run:  /setup       # Detect stack, set context, map codebase"
     echo "  2. Start working:        /scope [description]"
 }
 
@@ -192,41 +231,27 @@ show_status() {
     echo "GLOBAL (~/.claude/):"
     if [ -d "$HOME/.claude/agents" ]; then
         local agent_count=$(ls "$HOME/.claude/agents/"*.md 2>/dev/null | wc -l | tr -d ' ')
-        local cmd_count=$(ls -d "$HOME/.claude/skills/"*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')
+        local skill_count=$(find "$HOME/.claude/skills" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' ')
         local stack_count=$(ls "$HOME/.claude/stacks/"*.md 2>/dev/null | wc -l | tr -d ' ')
-        ok "Agents:   $agent_count ($(ls "$HOME/.claude/agents/"*.md 2>/dev/null | xargs -I{} basename {} .md | tr '\n' ' '))"
-        ok "Skills:   $cmd_count"
-        ok "Stacks:   $stack_count ($(ls "$HOME/.claude/stacks/"*.md 2>/dev/null | xargs -I{} basename {} .md | tr '\n' ' '))"
+        ok "Agents: $agent_count"
+        ok "Skills: $skill_count"
+        ok "Stacks: $stack_count"
         if [ -d "$HOME/.claude/scripts" ]; then
-            ok "Scripts:  installed"
+            ok "Scripts: installed"
         fi
     else
         warn "Not installed. Run: bash install.sh global"
     fi
 
     echo ""
-    echo "PROJECT ($(pwd)/.claude/):"
-    if [ -f ".claude/settings.json" ]; then
-        ok "settings.json"
-    else
-        warn "settings.json — not set up. Run: bash install.sh project"
-    fi
-    if [ -f ".claude/stack.md" ]; then
-        local stacks=$(grep -A20 "Detected\|Active" .claude/stack.md 2>/dev/null | grep "^-" | head -5)
-        ok "stack.md (detected)"
-        echo "$stacks" | while read line; do echo "     $line"; done
-    else
-        info "stack.md — not generated yet. Run /detect in Claude Code"
-    fi
-    if [ -f "CLAUDE.md" ]; then
-        ok "CLAUDE.md"
-    else
-        info "CLAUDE.md — not found"
-    fi
-    if [ -d ".ai-team" ]; then
-        local feat_count=$(ls -d .ai-team/*/ 2>/dev/null | wc -l | tr -d ' ')
-        ok "Features: $feat_count"
-    fi
+    echo "PROJECT ($(pwd)/):"
+    [ -f ".claude/settings.json" ] && ok "settings.json" || warn "settings.json — run: bash install.sh project"
+    [ -f ".claude/ai-team.md" ] && ok "ai-team.md" || warn "ai-team.md — run: bash install.sh project"
+    [ -f "CLAUDE.md" ] && ok "CLAUDE.md" || info "CLAUDE.md — not found"
+    [ -d ".ai-team" ] && ok ".ai-team/ directory" || info ".ai-team/ — not created yet"
+    [ -f ".claude/stack.md" ] && ok "stack.md" || info "stack.md — run /setup in Claude Code"
+    [ -f ".claude/project-context.md" ] && ok "project-context.md" || info "project-context.md — run /setup"
+    [ -f ".claude/codemap.md" ] && ok "codemap.md" || info "codemap.md — run /setup"
 }
 
 # ============================================================
@@ -235,7 +260,6 @@ show_status() {
 do_update() {
     cd "$SCRIPT_DIR"
 
-    # Check if this is a git repo
     if [ -d ".git" ]; then
         echo -e "${BLUE}━━━ Pulling latest from git ━━━${NC}"
         echo ""
