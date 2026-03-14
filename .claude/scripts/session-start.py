@@ -62,7 +62,7 @@ def main():
     if parts:
         print("\n".join(parts))
     else:
-        print("New project. Run /detect then /scope.")
+        print("New project. Run /setup then /scope.")
 
 
 if __name__ == "__main__":

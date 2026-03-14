@@ -9,7 +9,11 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Generated at install time (not part of the repo)
+# Generated per-project (not part of the repo)
 .ai-team/
 .claude/stack.md
 .claude/project-context.md
+.claude/codemap.md
+.claude/settings.local.json
+.claude/agent-memory/
+.claude/agent-memory-local/

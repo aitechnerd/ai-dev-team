@@ -20,7 +20,7 @@ Agents share state via `.ai-team/{feature}/shared-context.md`. Each agent reads 
 ## Commands
 
 `/scope` `/build-phase` `/validate` `/review` `/qa-check` `/sec-check` `/design-review`
-`/ship` `/health` `/revert` `/detect` `/setup` `/features` `/switch` `/approve-plan`
+`/ship` `/health` `/revert` `/setup` `/features` `/switch` `/approve-plan`
 `/fresh` `/scan` `/team`
 
 ## Conventions

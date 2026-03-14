@@ -309,7 +309,7 @@ if [ $TOOLS_RUN -eq 0 ]; then
     echo "- Python: \`pip install bandit pip-audit ruff\` (in your venv or via pipx)" >> "$SUMMARY_FILE"
     echo "- Rust: \`cargo install cargo-audit cargo-deny\`" >> "$SUMMARY_FILE"
     echo "- Ruby: \`gem install brakeman bundler-audit\`" >> "$SUMMARY_FILE"
-    echo "- Run /detect in Claude Code for full setup guide" >> "$SUMMARY_FILE"
+    echo "- Run /setup in Claude Code for full setup guide" >> "$SUMMARY_FILE"
     echo ""
     echo "⚠️  No scanners installed. See $SUMMARY_FILE for install instructions."
 else

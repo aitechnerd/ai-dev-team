@@ -45,7 +45,7 @@ install_global() {
     echo -e "${BLUE}━━━ Global Install: $TARGET ━━━${NC}"
     echo ""
 
-    mkdir -p "$TARGET/agents" "$TARGET/commands" "$TARGET/scripts" "$TARGET/stacks"
+    mkdir -p "$TARGET/agents" "$TARGET/scripts" "$TARGET/stacks"
 
     echo "📋 Agents..."
     for agent in product-owner software-engineer ux-designer qa-engineer code-reviewer devsecops triage mlops code-health; do
@@ -58,13 +58,14 @@ install_global() {
     done
 
     echo ""
-    echo "📋 Commands..."
-    for cmd in scope build-phase validate features switch scan detect ship health review setup revert design-review approve-plan fresh team qa-check sec-check; do
-        if [ -f "$SCRIPT_DIR/.claude/commands/$cmd.md" ]; then
-            cp -f "$SCRIPT_DIR/.claude/commands/$cmd.md" "$TARGET/commands/"
-            ok "/$cmd"
+    echo "📋 Skills..."
+    for skill in scope build-phase validate features switch scan detect ship health review setup revert design-review approve-plan fresh team qa-check sec-check; do
+        if [ -f "$SCRIPT_DIR/.claude/skills/$skill/SKILL.md" ]; then
+            mkdir -p "$TARGET/skills/$skill"
+            cp -f "$SCRIPT_DIR/.claude/skills/$skill/SKILL.md" "$TARGET/skills/$skill/"
+            ok "/$skill"
         else
-            warn "$cmd.md not found in package"
+            warn "$skill/SKILL.md not found in package"
         fi
     done
 
@@ -93,7 +94,7 @@ install_global() {
     echo ""
     echo "Installed to: $TARGET"
     echo "  agents/    — 9 agents (Opus: PO + SE, Haiku: triage, Sonnet: rest)"
-    echo "  commands/  — 18 slash commands"
+    echo "  skills/    — 18 slash commands"
     echo "  stacks/    — 6 language profiles"
     echo "  scripts/   — scanner runner + hooks"
     echo "  ai-team.md — team system reference"
@@ -191,10 +192,10 @@ show_status() {
     echo "GLOBAL (~/.claude/):"
     if [ -d "$HOME/.claude/agents" ]; then
         local agent_count=$(ls "$HOME/.claude/agents/"*.md 2>/dev/null | wc -l | tr -d ' ')
-        local cmd_count=$(ls "$HOME/.claude/commands/"*.md 2>/dev/null | wc -l | tr -d ' ')
+        local cmd_count=$(ls -d "$HOME/.claude/skills/"*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')
         local stack_count=$(ls "$HOME/.claude/stacks/"*.md 2>/dev/null | wc -l | tr -d ' ')
         ok "Agents:   $agent_count ($(ls "$HOME/.claude/agents/"*.md 2>/dev/null | xargs -I{} basename {} .md | tr '\n' ' '))"
-        ok "Commands: $cmd_count"
+        ok "Skills:   $cmd_count"
         ok "Stacks:   $stack_count ($(ls "$HOME/.claude/stacks/"*.md 2>/dev/null | xargs -I{} basename {} .md | tr '\n' ' '))"
         if [ -d "$HOME/.claude/scripts" ]; then
             ok "Scripts:  installed"
