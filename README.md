@@ -171,6 +171,30 @@ All agents adapt to your project's language via stack profiles.
 
 Plus: Semgrep (SAST), Gitleaks (secrets), Trivy (CVEs), Hadolint (Dockerfiles).
 
+## Token Tracker
+
+Built-in observability for every tool Claude uses. Installed automatically with `bash install.sh global`.
+
+```bash
+# Summary with per-tool breakdown
+~/.claude/scripts/track-tokens.sh report
+
+# Other reports
+~/.claude/scripts/track-tokens.sh top         # biggest token burners
+~/.claude/scripts/track-tokens.sh tools       # breakdown by tool type
+~/.claude/scripts/track-tokens.sh categories  # by category (git, search, agent, etc.)
+~/.claude/scripts/track-tokens.sh agents      # agent invocations by type
+~/.claude/scripts/track-tokens.sh skills      # skill invocations
+~/.claude/scripts/track-tokens.sh memory      # CLAUDE.md, memory, context reads
+~/.claude/scripts/track-tokens.sh models      # usage by model
+~/.claude/scripts/track-tokens.sh timeline    # daily usage
+~/.claude/scripts/track-tokens.sh savings     # what filtering could save
+```
+
+Tracks all tools (Bash, Read, Write, Edit, Grep, Glob, Agent, Skill, WebFetch, LSP), categorizes CLAUDE.md reads vs code reads vs memory access, records which model and agent type processed each call.
+
+Data: `~/.local/share/claude-token-tracker/tool-usage.jsonl`
+
 ## What Gets Installed Where
 
 ### Global (`~/.claude/`) — shared across all projects
@@ -180,7 +204,7 @@ Plus: Semgrep (SAST), Gitleaks (secrets), Trivy (CVEs), Hadolint (Dockerfiles).
 ├── agents/       9 agent definitions
 ├── skills/       30 skills (with reference docs)
 ├── stacks/       6 language profiles
-├── scripts/      pipeline hooks + scanner runner
+├── scripts/      pipeline hooks + scanner runner + token tracker
 └── ai-team.md    team reference
 ```
 

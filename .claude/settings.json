@@ -33,6 +33,17 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/track-tokens.sh",
+            "timeout": 3000
+          }
+        ]
+      }
     ]
   }
 }

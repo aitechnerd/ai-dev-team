@@ -95,13 +95,35 @@ install_global() {
     cp -f "$SCRIPT_DIR/.claude/scripts/"*.py "$TARGET/scripts/" 2>/dev/null && true
     cp -f "$SCRIPT_DIR/.claude/scripts/"*.sh "$TARGET/scripts/" 2>/dev/null && true
     chmod +x "$TARGET/scripts/"*.py "$TARGET/scripts/"*.sh 2>/dev/null || true
-    ok "Pipeline scripts"
+    ok "Pipeline scripts + token tracker"
 
     # --- Team reference ---
     echo ""
     echo "📋 Team reference..."
     cp -f "$SCRIPT_DIR/.claude/ai-team.md" "$TARGET/ai-team.md"
     ok "ai-team.md"
+
+    # --- Token tracker hook (user-level settings.json) ---
+    echo ""
+    echo "📋 Token tracker..."
+    local USER_SETTINGS="$HOME/.claude/settings.json"
+    local TRACKER_CMD="~/.claude/scripts/track-tokens.sh"
+
+    if [[ ! -f "$USER_SETTINGS" ]]; then
+        warn "No ~/.claude/settings.json — token tracker hook not registered (Claude Code will create it on first run)"
+    elif jq -e '.hooks.PostToolUse[]? | .hooks[]? | select(.command == "'"$TRACKER_CMD"'")' "$USER_SETTINGS" &>/dev/null; then
+        info "Token tracker hook already registered"
+    elif jq -e '.hooks.PostToolUse' "$USER_SETTINGS" &>/dev/null; then
+        # PostToolUse exists — append our hook
+        jq '.hooks.PostToolUse += [{"hooks":[{"type":"command","command":"'"$TRACKER_CMD"'","timeout":3000}]}]' "$USER_SETTINGS" > "${USER_SETTINGS}.tmp" && mv "${USER_SETTINGS}.tmp" "$USER_SETTINGS"
+        ok "Token tracker hook added to existing PostToolUse"
+    elif jq -e '.hooks' "$USER_SETTINGS" &>/dev/null; then
+        jq '.hooks.PostToolUse = [{"hooks":[{"type":"command","command":"'"$TRACKER_CMD"'","timeout":3000}]}]' "$USER_SETTINGS" > "${USER_SETTINGS}.tmp" && mv "${USER_SETTINGS}.tmp" "$USER_SETTINGS"
+        ok "Token tracker hook added (PostToolUse created)"
+    else
+        jq '. + {"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"'"$TRACKER_CMD"'","timeout":3000}]}]}}' "$USER_SETTINGS" > "${USER_SETTINGS}.tmp" && mv "${USER_SETTINGS}.tmp" "$USER_SETTINGS"
+        ok "Token tracker hook added (hooks section created)"
+    fi
 
     echo ""
     echo -e "${GREEN}Global install complete.${NC}"
@@ -110,8 +132,10 @@ install_global() {
     echo "  agents/    — 9 agents"
     echo "  skills/    — $skill_count skills (with reference docs)"
     echo "  stacks/    — 6 language profiles"
-    echo "  scripts/   — pipeline hooks"
+    echo "  scripts/   — pipeline hooks + token tracker"
     echo "  ai-team.md — team reference"
+    echo ""
+    echo "Token tracker: ~/.claude/scripts/track-tokens.sh report"
 }
 
 # ============================================================
@@ -238,6 +262,15 @@ show_status() {
         ok "Stacks: $stack_count"
         if [ -d "$HOME/.claude/scripts" ]; then
             ok "Scripts: installed"
+        fi
+        if [ -f "$HOME/.claude/scripts/track-tokens.sh" ]; then
+            ok "Token tracker: installed"
+            if [ -f "$HOME/.local/share/claude-token-tracker/tool-usage.jsonl" ]; then
+                local entries=$(wc -l < "$HOME/.local/share/claude-token-tracker/tool-usage.jsonl" | tr -d ' ')
+                info "  $entries tool calls tracked"
+            else
+                info "  No data yet"
+            fi
         fi
     else
         warn "Not installed. Run: bash install.sh global"

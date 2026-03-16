@@ -23,6 +23,11 @@ Agents share state via `.ai-team/{feature}/shared-context.md`. Each agent reads 
 `/ship` `/health` `/revert` `/setup` `/features` `/switch` `/approve-plan`
 `/fresh` `/scan` `/team`
 
+## Token Tracker
+
+All tool usage is logged to `~/.local/share/claude-token-tracker/tool-usage.jsonl`.
+Reports: `~/.claude/scripts/track-tokens.sh [report|tools|agents|models|memory|savings]`
+
 ## Conventions
 
 - All generated files go in `.ai-team/{feature}/`, never project root
