@@ -1,22 +1,29 @@
 ---
 name: qa-browser
-disable-model-invocation: true
 description: |
-  Systematically QA test a web application using Playwright. Use when asked to "qa", "QA",
+  Systematically QA test a web application using Playwright CLI. Use when asked to "qa", "QA",
   "test this site", "find bugs", "dogfood", or review quality. Four modes: diff-aware
   (automatic on feature branches — analyzes git diff, identifies affected pages, tests them),
   full (systematic exploration), quick (30-second smoke test), regression (compare against
-  baseline). Produces structured report with health score, screenshots, and repro steps.
+  baseline). Produces structured report with health score and evidence. Uses accessibility
+  tree snapshots for 4x token efficiency vs screenshot-based approaches.
 allowed-tools:
-  - Bash
+  - Bash(playwright-cli:*)
+  - Bash(diff:*)
+  - Bash(git:*)
+  - Bash(cp:*)
+  - Bash(ls:*)
+  - Bash(mkdir:*)
   - Read
   - Write
-  - AskUserQuestion
+  - Edit
+  - Grep
+  - Glob
 ---
 
-# /qa-browser: Systematic QA Testing with Playwright
+# /qa-browser: Systematic QA Testing with Playwright CLI
 
-You are a QA engineer. Test web applications like a real user — click everything, fill every form, check every state. Produce a structured report with evidence.
+You are a QA engineer. Test web applications like a real user — click everything, fill every form, check every state. Produce a structured report with evidence. Fix obvious issues in source code directly.
 
 ## Setup
 
@@ -34,32 +41,28 @@ You are a QA engineer. Test web applications like a real user — click everythi
 
 **Browser automation approach:**
 
-Write native Python Playwright scripts for all browser interactions. Use the webapp-testing skill's helper scripts when a server needs to be started:
+Use `playwright-cli` for all browser interactions. It runs headless Chrome and exposes an accessibility-tree-first workflow that is 4x more token-efficient than screenshot-based approaches.
 
 ```bash
-# If the app server is not already running:
-python .claude/skills/webapp-testing/scripts/with_server.py --server "npm run dev" --port 3000 -- python your_qa_script.py
+# Open a page (launches headless Chrome, navigates automatically)
+playwright-cli open http://localhost:3000
 
-# If the server is already running, just run Playwright directly:
-python your_qa_script.py
+# Get the accessibility tree as YAML with element refs
+playwright-cli snapshot
+
+# Interact using refs from the snapshot
+playwright-cli click e6
+playwright-cli fill e8 "search query"
+
+# Capture evidence
+playwright-cli screenshot
+playwright-cli console
+
+# Close when done
+playwright-cli close
 ```
 
-For simple navigation and screenshots, write inline Python scripts:
-
-```python
-from playwright.sync_api import sync_playwright
-
-with sync_playwright() as p:
-    browser = p.chromium.launch()
-    page = browser.new_page()
-    page.goto("http://localhost:3000")
-    page.screenshot(path="screenshot.png")
-    # Check console errors
-    errors = []
-    page.on("console", lambda msg: errors.append(msg.text) if msg.type == "error" else None)
-    # ... test interactions ...
-    browser.close()
-```
+All output (snapshots, screenshots, console logs) is saved to `.playwright-cli/`.
 
 **Create output directories:**
 
@@ -87,27 +90,24 @@ This is the **primary mode** for developers verifying their work. When the user 
    - View/template/component files -> which pages render them
    - Model/service files -> which pages use those models (check controllers that reference them)
    - CSS/style files -> which pages include those stylesheets
-   - API endpoints -> test them directly with fetch calls in Playwright
+   - API endpoints -> test them directly with `playwright-cli eval`
    - Static pages (markdown, HTML) -> navigate to them directly
 
-3. **Detect the running app** — check common local dev ports using Playwright:
-   ```python
-   for port in [3000, 4000, 5173, 8080]:
-       try:
-           page.goto(f"http://localhost:{port}", timeout=3000)
-           print(f"Found app on :{port}")
-           break
-       except:
-           continue
+3. **Detect the running app** — check common local dev ports:
+   ```bash
+   for port in 3000 4000 5173 8080; do
+     playwright-cli open "http://localhost:$port" 2>/dev/null && echo "Found app on :$port" && break
+     playwright-cli close 2>/dev/null
+   done
    ```
    If no local app is found, check for a staging/preview URL in the PR or environment. If nothing works, ask the user for the URL.
 
 4. **Test each affected page/route:**
-   - Navigate to the page
-   - Take a screenshot
-   - Check console for errors
-   - If the change was interactive (forms, buttons, flows), test the interaction end-to-end
-   - Compare DOM state before and after actions to verify changes had the expected effect
+   - Navigate with `playwright-cli open <url>`
+   - Take a snapshot with `playwright-cli snapshot` to inspect the accessibility tree
+   - Check console with `playwright-cli console`
+   - If the change was interactive (forms, buttons, flows), test the interaction end-to-end using `click`, `fill`, and `snapshot` to verify state changes
+   - Take screenshots with `playwright-cli screenshot` for evidence
 
 5. **Cross-reference with commit messages and PR description** to understand *intent* — what should the change do? Verify it actually does that.
 
@@ -133,7 +133,7 @@ Run full mode, then load `baseline.json` from a previous run. Diff: which issues
 
 ### Phase 1: Initialize
 
-1. Ensure Playwright is available (`npx playwright install chromium` if needed)
+1. Ensure `playwright-cli` is available (installed globally)
 2. Create output directories
 3. Copy report template from `qa-browser/templates/qa-report-template.md` to output dir
 4. Start timer for duration tracking
@@ -142,23 +142,26 @@ Run full mode, then load `baseline.json` from a previous run. Diff: which issues
 
 **If the user specified auth credentials:**
 
-```python
-page.goto(login_url)
-page.fill('input[type="email"]', 'user@example.com')
-page.fill('input[type="password"]', password)  # NEVER include real passwords in report
-page.click('button[type="submit"]')
-page.wait_for_load_state("networkidle")
-page.screenshot(path=f"{report_dir}/screenshots/auth-verified.png")
+```bash
+playwright-cli open "$LOGIN_URL"
+playwright-cli snapshot
+# Find the email/password fields and submit button from the snapshot refs
+playwright-cli fill e8 "user@example.com"
+playwright-cli fill e12 "[REDACTED]"
+playwright-cli click e15
+# Verify auth succeeded
+playwright-cli snapshot
+playwright-cli screenshot
+# Save session state for reuse
+playwright-cli state-save auth-state
 ```
 
 **If the user provided a cookie file:**
 
-```python
-import json
-with open("cookies.json") as f:
-    cookies = json.load(f)
-context.add_cookies(cookies)
-page.goto(target_url)
+```bash
+playwright-cli open "$TARGET_URL"
+playwright-cli cookie-set "$(cat cookies.json)"
+playwright-cli open "$TARGET_URL"  # Reload with cookies
 ```
 
 **If 2FA/OTP is required:** Ask the user for the code and wait.
@@ -169,51 +172,93 @@ page.goto(target_url)
 
 Get a map of the application:
 
-```python
-page.goto(target_url)
-page.wait_for_load_state("networkidle")
-page.screenshot(path=f"{report_dir}/screenshots/initial.png")
-
-# Collect all links
-links = page.eval_on_selector_all("a[href]", "els => els.map(e => ({text: e.textContent.trim(), href: e.href}))")
-
-# Check console errors
-console_errors = []
-page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" else None)
+```bash
+# Navigate and take an initial snapshot
+playwright-cli open "$TARGET_URL"
+playwright-cli snapshot
+playwright-cli console
+playwright-cli screenshot
 ```
 
+Copy the screenshot to `.qa-reports/screenshots/initial.png`.
+
+From the accessibility tree snapshot, identify:
+- All navigation links and their destinations
+- Main interactive elements (forms, buttons, menus)
+- Page structure and content areas
+
 **Detect framework** (note in report metadata):
-- `__next` in HTML or `_next/data` requests -> Next.js
-- `csrf-token` meta tag -> Rails
-- `wp-content` in URLs -> WordPress
+- `__next` in snapshot or `_next/data` in network -> Next.js
+- `csrf-token` in snapshot -> Rails
+- `wp-content` in network requests -> WordPress
 - Client-side routing with no page reloads -> SPA
 
-**For SPAs:** The links extraction may return few results because navigation is client-side. Use Playwright selectors to find nav elements (buttons, menu items) instead.
+```bash
+# Check network for framework indicators
+playwright-cli network
+```
+
+**For SPAs:** The accessibility tree is more reliable than link extraction for discovering navigation targets. Look for nav elements, buttons, and menu items in the snapshot.
 
 ### Phase 4: Explore
 
 Visit pages systematically. At each page:
 
-```python
-page.goto(page_url)
-page.wait_for_load_state("networkidle")
-page.screenshot(path=f"{report_dir}/screenshots/{page_name}.png")
-# Check console errors accumulated during navigation
+```bash
+playwright-cli open "$PAGE_URL"
+playwright-cli snapshot
+playwright-cli console
+playwright-cli screenshot
 ```
+
+Copy screenshots to `.qa-reports/screenshots/{page_name}.png`.
 
 Then follow the **per-page exploration checklist** (see `qa-browser/references/issue-taxonomy.md`):
 
-1. **Visual scan** — Look at the screenshot for layout issues
-2. **Interactive elements** — Click buttons, links, controls. Do they work?
-3. **Forms** — Fill and submit. Test empty, invalid, edge cases
-4. **Navigation** — Check all paths in and out
+1. **Accessibility tree scan** — Read the snapshot YAML for missing labels, broken structure, unnamed elements
+2. **Interactive elements** — Use snapshot diffs to verify each interaction:
+   ```bash
+   playwright-cli snapshot                    # before state
+   BEFORE=$(ls -t .playwright-cli/page-*.yml | head -1)
+   playwright-cli click e14                   # action
+   playwright-cli snapshot                    # after state
+   AFTER=$(ls -t .playwright-cli/page-*.yml | head -1)
+   diff "$BEFORE" "$AFTER"                   # what changed?
+   ```
+   The diff shows exactly what appeared/disappeared — dead buttons show no diff, working ones show new content.
+3. **Forms** — Use snapshot diffs to verify validation and submission:
+   ```bash
+   # Capture baseline
+   playwright-cli snapshot
+   BEFORE=$(ls -t .playwright-cli/page-*.yml | head -1)
+
+   # Test empty submission — diff should show validation errors appear
+   playwright-cli click e25
+   playwright-cli snapshot
+   AFTER=$(ls -t .playwright-cli/page-*.yml | head -1)
+   diff "$BEFORE" "$AFTER"
+
+   # Test invalid data — diff should show specific validation message
+   playwright-cli fill e8 "not-an-email"
+   playwright-cli click e25
+   playwright-cli snapshot
+   diff "$BEFORE" "$(ls -t .playwright-cli/page-*.yml | head -1)"
+
+   # Test valid data — diff should show success state
+   playwright-cli fill e8 "user@example.com"
+   playwright-cli click e25
+   playwright-cli snapshot
+   diff "$BEFORE" "$(ls -t .playwright-cli/page-*.yml | head -1)"
+   ```
+4. **Navigation** — Check all paths in and out by clicking nav refs
 5. **States** — Empty state, loading, error, overflow
-6. **Console** — Any new JS errors after interactions?
+6. **Console** — Run `playwright-cli console` after interactions to check for JS errors
 7. **Responsiveness** — Check mobile viewport if relevant:
-   ```python
-   page.set_viewport_size({"width": 375, "height": 812})
-   page.screenshot(path=f"{report_dir}/screenshots/{page_name}-mobile.png")
-   page.set_viewport_size({"width": 1280, "height": 720})
+   ```bash
+   playwright-cli resize 375 812
+   playwright-cli snapshot
+   playwright-cli screenshot
+   playwright-cli resize 1280 720
    ```
 
 **Depth judgment:** Spend more time on core features (homepage, dashboard, checkout, search) and less on secondary pages (about, terms, privacy).
@@ -224,23 +269,48 @@ Then follow the **per-page exploration checklist** (see `qa-browser/references/i
 
 Document each issue **immediately when found** — don't batch them.
 
-**Two evidence tiers:**
+**Three evidence tiers:**
 
-**Interactive bugs** (broken flows, dead buttons, form failures):
-1. Take a screenshot before the action
+**Interactive bugs** (broken flows, dead buttons, form failures) — use snapshot diffs + screenshots:
+1. Snapshot before the action (save as "before")
 2. Perform the action
-3. Take a screenshot showing the result
-4. Write repro steps referencing screenshots
+3. Snapshot after (save as "after")
+4. Diff the two snapshots — this is the primary evidence
+5. Screenshot before/after for visual evidence
 
-```python
-page.screenshot(path=f"{report_dir}/screenshots/issue-001-step-1.png")
-page.click(selector)
-page.screenshot(path=f"{report_dir}/screenshots/issue-001-result.png")
+```bash
+# Capture before state
+playwright-cli snapshot
+BEFORE=$(ls -t .playwright-cli/page-*.yml | head -1)
+playwright-cli screenshot
+cp "$(ls -t .playwright-cli/page-*.png | head -1)" .qa-reports/screenshots/issue-001-before.png
+
+# Perform action
+playwright-cli click e14
+
+# Capture after state
+playwright-cli snapshot
+AFTER=$(ls -t .playwright-cli/page-*.yml | head -1)
+playwright-cli screenshot
+cp "$(ls -t .playwright-cli/page-*.png | head -1)" .qa-reports/screenshots/issue-001-after.png
+
+# Diff — this is the key evidence
+diff "$BEFORE" "$AFTER"
 ```
+
+Include the snapshot diff output in the issue description. It shows precisely what
+changed (or didn't change) in the DOM — much more useful than "see screenshots."
+
+**Dead button example:** If `diff` shows no changes after clicking, the button is dead.
+**Unexpected side effect:** If `diff` shows elements changing that shouldn't, that's a regression.
 
 **Static bugs** (typos, layout issues, missing images):
 1. Take a single screenshot showing the problem
-2. Describe what's wrong
+2. Include the snapshot YAML excerpt showing the problematic element
+
+**Console/network bugs** (JS errors, failed requests):
+1. Run `playwright-cli console` or `playwright-cli network`
+2. Include the relevant log lines
 
 **Write each issue to the report immediately** using the template format from `qa-browser/templates/qa-report-template.md`.
 
@@ -267,6 +337,54 @@ page.screenshot(path=f"{report_dir}/screenshots/issue-001-result.png")
 - Issues fixed (in baseline but not current)
 - New issues (in current but not baseline)
 - Append the regression section to the report
+
+### Phase 7: Fix Loop
+
+After documenting issues, fix what you can directly in source code. This is the **fix-first approach** — auto-fix obvious issues, only ask about judgment calls.
+
+**Auto-fix (no confirmation needed):**
+- Typos in user-visible text
+- Broken internal links (wrong href in source)
+- Missing alt text on images
+- Missing form labels
+- Obvious CSS issues (overflow, z-index, clipping)
+- Console errors caused by trivial code bugs (undefined references, missing null checks)
+
+**Ask first (judgment calls):**
+- UX flow changes
+- Layout redesigns
+- Feature behavior changes
+- Anything that might affect other parts of the app
+
+**Fix loop process:**
+
+1. For each fixable issue, locate the source file:
+   ```bash
+   # Use Grep to find the offending text/code
+   # Use Glob to find relevant source files
+   ```
+
+2. Fix the issue using Edit (prefer small, targeted edits)
+
+3. Commit each fix atomically:
+   ```bash
+   git add <specific-files>
+   git commit -m "fix: <what was fixed>
+
+   Found during QA of <page/feature>. <Brief context>."
+   ```
+
+4. Re-verify the fix with `playwright-cli`:
+   ```bash
+   playwright-cli open "$PAGE_URL"
+   playwright-cli snapshot
+   # Confirm the issue is resolved
+   playwright-cli screenshot  # Updated evidence
+   ```
+
+5. Update the QA report: mark fixed issues with `[FIXED in <commit-sha>]`
+
+**If a fix breaks something else:** Revert immediately, document as a judgment-call issue, and move on.
 
 ---
 
@@ -313,25 +431,25 @@ Minimum 0 per category.
 
 ### Next.js
 - Check console for hydration errors (`Hydration failed`, `Text content did not match`)
-- Monitor `_next/data` requests in network — 404s indicate broken data fetching
-- Test client-side navigation (click links, don't just `goto`) — catches routing issues
+- Monitor network with `playwright-cli network` — 404s on `_next/data` indicate broken data fetching
+- Test client-side navigation (click link refs, don't just `open` URLs) — catches routing issues
 - Check for CLS (Cumulative Layout Shift) on pages with dynamic content
 
 ### Rails
 - Check for N+1 query warnings in console (if development mode)
-- Verify CSRF token presence in forms
+- Verify CSRF token presence in forms via `playwright-cli snapshot` (look for hidden inputs)
 - Test Turbo/Stimulus integration — do page transitions work smoothly?
 - Check for flash messages appearing and dismissing correctly
 
 ### WordPress
-- Check for plugin conflicts (JS errors from different plugins)
+- Check for plugin conflicts (JS errors from different plugins via `playwright-cli console`)
 - Verify admin bar visibility for logged-in users
-- Test REST API endpoints (`/wp-json/`)
+- Test REST API endpoints (`/wp-json/`) using `playwright-cli eval "fetch('/wp-json/').then(r => r.json())"`
 - Check for mixed content warnings (common with WP)
 
 ### General SPA (React, Vue, Angular)
-- Use Playwright selectors for navigation — link extraction misses client-side routes
-- Check for stale state (navigate away and back — does data refresh?)
+- Use accessibility tree refs for navigation — snapshot is more reliable than link extraction for client-side routes
+- Check for stale state (navigate away via `click`, navigate back — does data refresh?)
 - Test browser back/forward — does the app handle history correctly?
 - Check for memory leaks (monitor console after extended use)
 
@@ -343,12 +461,12 @@ Minimum 0 per category.
 2. **Verify before documenting.** Retry the issue once to confirm it's reproducible, not a fluke.
 3. **Never include credentials.** Write `[REDACTED]` for passwords in repro steps.
 4. **Write incrementally.** Append each issue to the report as you find it. Don't batch.
-5. **Never read source code.** Test as a user, not a developer.
+5. **Never read source code during testing.** Test as a user, not a developer. (Source code reading is allowed only during Phase 7: Fix Loop.)
 6. **Check console after every interaction.** JS errors that don't surface visually are still bugs.
 7. **Test like a user.** Use realistic data. Walk through complete workflows end-to-end.
 8. **Depth over breadth.** 5-10 well-documented issues with evidence > 20 vague descriptions.
 9. **Never delete output files.** Screenshots and reports accumulate — that's intentional.
-10. **Use Playwright's accessibility tree** for tricky UIs — `page.accessibility.snapshot()` finds elements the DOM misses.
+10. **Accessibility tree first.** Always start with `playwright-cli snapshot` to understand page structure. The accessibility tree finds elements the visual DOM misses — unlabeled inputs, hidden content, broken ARIA. Use screenshots for evidence, snapshots for exploration.
 
 ---
 

@@ -1,26 +1,28 @@
 ---
 name: review
 description: >
-  Run the review pipeline on the current branch without building anything.
-  Useful when you coded manually or used default Claude Code and want
-  the AI team to review your work. Use /review [specific focus area].
+  Fix-first review pipeline. Code reviewer auto-fixes mechanical issues
+  and only escalates judgment calls. Run on any branch without building.
+  Use /review [specific focus area].
 disable-model-invocation: true
 allowed-tools:
   - Read
   - Write
+  - Edit
   - Bash
   - Glob
   - Grep
   - Task
 ---
 
-# Review — Review-Only Mode
+# Review — Fix-First Review Pipeline
 
 ## Overview
 
-Runs the full review pipeline (code review, security, QA) on whatever
-changes exist on the current branch compared to main. No SOW, no plan,
-no building — just the review agents.
+Runs the review pipeline with **fix-first** approach: the code reviewer
+auto-fixes obvious mechanical issues (missing error handling, debug
+statements, dead code, etc.) and only presents judgment calls for your
+input. No SOW, no plan, no building — just review and fix.
 
 ## Step 1: Detect Changes
 
@@ -49,13 +51,18 @@ bash ~/.claude/scripts/run-scanners.sh "/tmp/review-scans"
 Spawn **triage** (Haiku):
 > "MODE: scan-triage. Read reports in /tmp/review-scans/."
 
-## Step 3: Code Review
+## Step 3: Code Review (Fix-First)
 
 Spawn **code-reviewer** (Sonnet):
 > "Review all changes on this branch (diff against main).
 > Stack: read .claude/stack.md for language-specific checks.
 > Triage summary: {paste diff-triage output}.
 > $ARGUMENTS context: {user's focus area if provided}.
+>
+> **Fix-first mode:** Auto-fix all mechanical issues (missing error handling,
+> debug statements, unused imports, dead code, obvious security fixes, etc.)
+> with atomic commits. Report what you fixed and what needs human input.
+>
 > Save to /tmp/review-report.md."
 
 ## Step 4: DevSecOps — CONDITIONAL
@@ -71,15 +78,26 @@ Spawn **devsecops** (Sonnet) MODE 2:
 > "**Review complete for branch `{current_branch}`**
 >
 > **Changes reviewed:** [N files, +X/-Y lines]
-> **Code review:** [APPROVED / REQUEST CHANGES — N issues]
+> **Auto-fixed:** [N issues] (mechanical fixes committed)
+> **Needs your input:** [N issues] (judgment calls)
 > **Security:** [CLEAN / N findings] (or skipped)
 >
-> [Show key findings from code-review.md]
-> [Show key findings from security-review.md if run]
+> **Auto-fixed items:**
+> [list each: file:line — what was fixed — commit sha]
 >
-> **Want me to fix the issues found?** I can address them now."
+> **Needs input:**
+> [for each ASK item: file:line — issue — options A/B/C — recommendation]
+>
+> [Show security findings if any]"
 
-If user says yes -> spawn SE to fix, re-run review once.
+## Step 6: Apply User Decisions
+
+If there are ASK items and the user responds:
+- For items the user wants fixed → apply the recommended fix, commit
+- For items the user skips → no action
+
+If no ASK items remain (everything was auto-fixed):
+> "All issues were mechanical and have been auto-fixed. You're good to ship."
 
 ---
 
@@ -87,6 +105,7 @@ If user says yes -> spawn SE to fix, re-run review once.
 
 - This does NOT require a feature to be active. Works on any branch.
 - Does NOT generate SOW, technical plan, or feature docs.
+- Auto-fix commits use format: `fix(review): <what> at <file:line>`
 - Good for: manual coding sessions, prototypes, other AI tool output,
   pre-PR sanity checks, code from new contributors.
 - Stack profiles from `.claude/stack.md` are used if available.

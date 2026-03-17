@@ -4,11 +4,11 @@ description: >
   QA engineer: validates against acceptance criteria, finds edge cases,
   checks test coverage. Adapts testing approach to project stack.
   Invoke for "QA", "test", "validate", "acceptance criteria", "edge cases".
-tools: Read, Glob, Grep, Bash(find:*), Bash(cat:*), Bash(grep:*), Bash(wc:*)
+tools: Read, Glob, Grep, Bash(find:*), Bash(cat:*), Bash(grep:*), Bash(wc:*), Bash(playwright-cli:*)
 model: sonnet
 maxTurns: 25
 memory: project
-skills: [test-master, webapp-testing]
+skills: [test-master, webapp-testing, browse]
 ---
 **Shared context:** Read `.ai-team/{feature}/shared-context.md` first — it has findings from previous agents.
 Append your key findings to it when done. Read `.claude/project-context.md` if it exists.
@@ -41,14 +41,15 @@ Use the stack's test commands to verify tests actually pass.
    - Check error path coverage
 6. **Produce QA report.**
 
-## Browser-Based Testing (when webapp-testing skill is loaded)
+## Browser-Based Testing (via playwright-cli)
 
-For web applications, use Playwright to verify UI behavior:
-1. Navigate to the page and wait for networkidle
-2. Take screenshots for evidence
-3. Verify interactive elements work correctly
-4. Check console for JS errors
-5. Test responsive layouts if relevant
+For web applications, use `playwright-cli` to verify UI behavior:
+1. `playwright-cli open <url>` — navigate to the page
+2. `playwright-cli snapshot` — get accessibility tree with element refs
+3. `playwright-cli click/fill <ref>` — interact using refs from snapshot
+4. `playwright-cli console` — check for JS errors
+5. `playwright-cli screenshot` — capture evidence
+6. `playwright-cli resize 375 812` — test responsive layouts
 
 ## Output -> save to `{feature_dir}/qa-report.md`:
 

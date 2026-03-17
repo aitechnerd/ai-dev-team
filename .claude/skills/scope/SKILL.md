@@ -20,7 +20,19 @@ allowed-tools:
 ## Input
 Task description: $ARGUMENTS
 
-## Step 0: Classify the Task
+## Step 0: Parse Scope Mode
+
+Check if the user specified a scope mode (expand, hold, reduce). Examples:
+- `/scope --expand Build a patient portal` → EXPAND mode
+- `/scope --reduce Add search` → REDUCE mode
+- `/scope Build notifications` → default HOLD mode
+
+Scope modes change how aggressively the PO scopes the work:
+- **EXPAND** — find the 10-star product, push scope up, think bigger
+- **HOLD** (default) — tight scope, say no to non-essentials
+- **REDUCE** — minimum viable version, cut everything that isn't load-bearing
+
+## Step 1: Classify the Task
 
 Read the description carefully. Classify by **intent** (use judgment, not keywords):
 
@@ -177,7 +189,7 @@ If the cause is unclear, investigate briefly.
 ### Scope (PO on Sonnet — lightweight)
 
 Spawn **product-owner** with **model: sonnet**:
-> "MODE 1: Discovery & Requirements.
+> "MODE 1: Discovery & Requirements. Scope mode: REDUCE (bug fix — always minimal).
 > This is a BUG FIX — keep it minimal.
 > Bug: $DESCRIPTION
 > Ask at most 1-2 clarifying questions if anything is ambiguous.
@@ -231,8 +243,8 @@ Offer git branch.
 ### Scope (PO on Sonnet)
 
 Spawn **product-owner** with **model: sonnet**:
-> "MODE 1: Discovery & Requirements.
-> This is a SMALL feature — keep scope tight, max 2-3 questions.
+> "MODE 1: Discovery & Requirements. Scope mode: {SCOPE_MODE or HOLD}.
+> This is a SMALL feature — max 2-3 questions.
 > Feature: $DESCRIPTION
 > Write a focused SOW with clear ACs.
 > Save to .ai-team/$FEATURE_NAME/sow.md"
@@ -309,7 +321,7 @@ Spawn **triage** (Haiku):
 ### Step 2: Product Owner — Discovery & Requirements
 
 Spawn the **product-owner** (Opus):
-> "MODE 1: Discovery & Requirements.
+> "MODE 1: Discovery & Requirements. Scope mode: {SCOPE_MODE or HOLD}.
 > Feature: $FEATURE_NAME — Description: $DESCRIPTION
 > Feature directory: .ai-team/$FEATURE_NAME/
 >
@@ -375,7 +387,7 @@ If INCOMPLETE -> send back to SE.
 ### Step 6: Product Owner — Plan Approval
 
 Spawn **product-owner** with **model: sonnet**:
-> "MODE 2: Plan Review.
+> "MODE 2: Plan Review. Use the scope mode from sow.md (EXPAND/HOLD/REDUCE).
 > Review .ai-team/$FEATURE_NAME/technical-plan.md against sow.md.
 > If approved, create .ai-team/$FEATURE_NAME/plan-approved.md."
 
