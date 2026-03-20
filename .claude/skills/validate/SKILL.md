@@ -5,6 +5,7 @@ description: >
   then conditionally runs review agents. Includes code health and ship prep.
   Use /validate [optional: specific area to focus on].
 disable-model-invocation: true
+context: fork
 allowed-tools:
   - Read
   - Write

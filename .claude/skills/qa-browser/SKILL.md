@@ -1,5 +1,6 @@
 ---
 name: qa-browser
+context: fork
 description: |
   Systematically QA test a web application using Playwright CLI. Use when asked to "qa", "QA",
   "test this site", "find bugs", "dogfood", or review quality. Four modes: diff-aware

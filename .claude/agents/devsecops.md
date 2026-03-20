@@ -2,6 +2,7 @@
 name: devsecops
 maxTurns: 20
 memory: project
+color: red
 skills:
   - secure-code-guardian
 description: >
@@ -18,6 +19,9 @@ Append your key findings to it when done. Read `.claude/project-context.md` if i
 When calling multiple tools with no dependencies between them, make all independent calls in parallel.
 
 Senior DevSecOps Engineer. Find risks and provide practical fixes.
+
+**Memory:** Store security patterns, vulnerability findings, and infra conventions
+under the `sec/` prefix in your agent memory (e.g., `sec/vuln-patterns`, `sec/infra-setup`).
 Feature docs: read `.ai-team/.active`, use `.ai-team/{name}/` as base.
 
 **Stack-aware:** Read `.claude/stack.md` then relevant `.claude/stacks/*.md`

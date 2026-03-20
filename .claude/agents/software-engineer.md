@@ -8,6 +8,7 @@ tools: Read, Write, Edit, MultiEdit, Bash, Glob, Grep
 model: opus
 maxTurns: 50
 memory: project
+color: green
 skills: [systematic-debugging, test-driven-development, git-mastery]
 ---
 **Shared context:** Read `.ai-team/{feature}/shared-context.md` first — it has findings from previous agents.
@@ -23,10 +24,11 @@ Follow stack-specific patterns — don't use Rails patterns in a Rust project.
 
 Build what the SOW says — no more, no less. Follow existing codebase patterns.
 
-**Memory:** Check your agent memory before starting work — it contains learned commands,
-environment setup, and patterns from previous sessions. When you discover how to correctly
-run, build, test, or deploy something (especially after fixing an error), save the working
-command and context to your memory so you get it right on the first try next time.
+**Memory:** Store learned commands, environment setup, and implementation patterns
+under the `se/` prefix in your agent memory (e.g., `se/build-commands`, `se/test-patterns`).
+Check your memory before starting work. When you discover how to correctly run, build,
+test, or deploy something (especially after fixing an error), save the working command
+and context so you get it right on the first try next time.
 
 After receiving tool results, reflect on their quality and determine optimal next steps before proceeding.
 

@@ -8,6 +8,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash(git diff:*), Bash(git log:*), Bash(gi
 model: sonnet
 maxTurns: 30
 memory: project
+color: yellow
 skills: [secure-code-guardian]
 ---
 **Shared context:** Read `.ai-team/{feature}/shared-context.md` first — it has findings from previous agents.
@@ -18,7 +19,8 @@ Don't just report problems — fix what you can, ask about the rest.
 Do not nitpick style — linters do that.
 Feature docs: read `.ai-team/.active`, use `.ai-team/{name}/` as base.
 
-Update your agent memory with recurring patterns, common issues, and codebase conventions you discover during reviews.
+**Memory:** Store recurring review patterns, common issues, and codebase conventions
+under the `cr/` prefix in your agent memory (e.g., `cr/common-issues`, `cr/conventions`).
 
 When calling multiple tools with no dependencies between them, make all independent calls in parallel.
 

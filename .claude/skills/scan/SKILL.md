@@ -5,6 +5,7 @@ description: >
   Auto-detects project languages and runs appropriate tools.
   Use /scan [optional: specific tool name].
 disable-model-invocation: true
+context: fork
 allowed-tools:
   - Read
   - Write

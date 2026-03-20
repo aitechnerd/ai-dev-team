@@ -144,7 +144,7 @@ Spawn **qa-engineer** (Sonnet):
 Quick sanity check on the fixes from steps 3-5. Fixes themselves can
 introduce new issues — this catches them.
 
-Spawn **code-reviewer** (Sonnet) with narrowed scope:
+Spawn **code-reviewer** with **model: haiku** (narrowed scope, fast pass):
 > "Second-pass review for {active_name}. Focus on CRITICAL and HIGH only.
 > Only review changes since the first code review (fix commits).
 > Skip style, documentation, minor issues. Save to $FEATURE_DIR/code-review-2.md."

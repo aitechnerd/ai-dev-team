@@ -5,6 +5,7 @@ description: >
   and only escalates judgment calls. Run on any branch without building.
   Use /review [specific focus area].
 disable-model-invocation: true
+context: fork
 allowed-tools:
   - Read
   - Write
