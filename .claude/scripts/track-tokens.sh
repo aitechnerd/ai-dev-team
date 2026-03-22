@@ -251,6 +251,97 @@ if [[ "${1:-}" != "" ]] && [[ ! "${1:-}" =~ ^\{ ]]; then
       echo "  Total tracked: $total tokens"
       ;;
 
+    codemap|codemap-impact)
+      echo "═══════════════════════════════════════════════════"
+      echo "  Codemap Impact Analysis"
+      echo "═══════════════════════════════════════════════════"
+      echo ""
+      echo "  Compares sessions WITH codemap.md vs WITHOUT."
+      echo "  Measures: exploration calls (Glob/Grep/Read) before first Edit/Write."
+      echo ""
+
+      # Group by session, classify each session
+      jq -s '
+        # Group events by session
+        group_by(.session_id) |
+        map(select(length > 3)) |   # skip tiny sessions
+
+        map({
+          session_id: .[0].session_id,
+          total_calls: length,
+
+          # Did this session read codemap.md?
+          has_codemap: (map(select(.file_path != null and (.file_path | test("codemap\\.md$")))) | length > 0),
+
+          # Count exploration calls (search + file_read) before first edit/write
+          exploration_before_edit: (
+            # Find index of first edit/write
+            [to_entries[] | select(.value.category == "file_edit" or .value.category == "file_write") | .key] |
+            if length > 0 then .[0] else length end
+          ) as $first_edit |
+          [.[:$first_edit] | .[] | select(.category == "search" or .category == "file_read")] | length,
+
+          # Total exploration calls in session
+          total_exploration: [.[] | select(.category == "search" or .category == "file_read")] | length,
+
+          # Total exploration tokens
+          exploration_tokens: ([.[] | select(.category == "search" or .category == "file_read") | .estimated_tokens] | add // 0),
+
+          # Total tokens
+          total_tokens: ([.[].estimated_tokens] | add // 0)
+        }) |
+
+        # Split into two groups
+        {
+          with_codemap: [.[] | select(.has_codemap)],
+          without_codemap: [.[] | select(.has_codemap | not)]
+        } |
+
+        # Compute averages for each group
+        {
+          with_codemap: {
+            sessions: (.with_codemap | length),
+            avg_exploration_before_edit: (if (.with_codemap | length) > 0 then (.with_codemap | map(.exploration_before_edit) | add / length | . * 10 | round / 10) else 0 end),
+            avg_total_exploration: (if (.with_codemap | length) > 0 then (.with_codemap | map(.total_exploration) | add / length | . * 10 | round / 10) else 0 end),
+            avg_exploration_tokens: (if (.with_codemap | length) > 0 then (.with_codemap | map(.exploration_tokens) | add / length | round) else 0 end),
+            avg_total_tokens: (if (.with_codemap | length) > 0 then (.with_codemap | map(.total_tokens) | add / length | round) else 0 end)
+          },
+          without_codemap: {
+            sessions: (.without_codemap | length),
+            avg_exploration_before_edit: (if (.without_codemap | length) > 0 then (.without_codemap | map(.exploration_before_edit) | add / length | . * 10 | round / 10) else 0 end),
+            avg_total_exploration: (if (.without_codemap | length) > 0 then (.without_codemap | map(.total_exploration) | add / length | . * 10 | round / 10) else 0 end),
+            avg_exploration_tokens: (if (.without_codemap | length) > 0 then (.without_codemap | map(.exploration_tokens) | add / length | round) else 0 end),
+            avg_total_tokens: (if (.without_codemap | length) > 0 then (.without_codemap | map(.total_tokens) | add / length | round) else 0 end)
+          }
+        }
+      ' "$LOG_FILE" | jq -r '
+        "  WITH codemap.md (\(.with_codemap.sessions) sessions):",
+        "    Avg exploration before first edit:  \(.with_codemap.avg_exploration_before_edit) calls",
+        "    Avg total exploration calls:        \(.with_codemap.avg_total_exploration)",
+        "    Avg exploration tokens:             \(.with_codemap.avg_exploration_tokens)",
+        "    Avg total tokens:                   \(.with_codemap.avg_total_tokens)",
+        "",
+        "  WITHOUT codemap.md (\(.without_codemap.sessions) sessions):",
+        "    Avg exploration before first edit:  \(.without_codemap.avg_exploration_before_edit) calls",
+        "    Avg total exploration calls:        \(.without_codemap.avg_total_exploration)",
+        "    Avg exploration tokens:             \(.without_codemap.avg_exploration_tokens)",
+        "    Avg total tokens:                   \(.without_codemap.avg_total_tokens)",
+        "",
+        (if .with_codemap.sessions > 0 and .without_codemap.sessions > 0 then
+          "  DELTA:",
+          "    Exploration calls:  \( ((.without_codemap.avg_total_exploration - .with_codemap.avg_total_exploration) / .without_codemap.avg_total_exploration * 100) | . * 10 | round / 10 )% fewer with codemap",
+          "    Exploration tokens: \( ((.without_codemap.avg_exploration_tokens - .with_codemap.avg_exploration_tokens) / (if .without_codemap.avg_exploration_tokens > 0 then .without_codemap.avg_exploration_tokens else 1 end) * 100) | . * 10 | round / 10 )% fewer with codemap",
+          "    Total tokens:       \( ((.without_codemap.avg_total_tokens - .with_codemap.avg_total_tokens) / (if .without_codemap.avg_total_tokens > 0 then .without_codemap.avg_total_tokens else 1 end) * 100) | . * 10 | round / 10 )% fewer with codemap"
+        else
+          "  ⏳ Need sessions in both groups to compute delta.",
+          "     Run some sessions WITH codemap.md and some WITHOUT."
+        end)
+      '
+      echo ""
+      echo "  Tip: Generate codemap for a project, work on it for a few sessions,"
+      echo "  then run this report. Compare against projects without codemap."
+      ;;
+
     reset)
       rm -f "$LOG_FILE"
       echo "Tracker data cleared."
@@ -261,7 +352,7 @@ if [[ "${1:-}" != "" ]] && [[ ! "${1:-}" =~ ^\{ ]]; then
       ;;
 
     *)
-      echo "Usage: track-tokens.sh [report|top|big|tools|categories|agents|skills|memory|models|timeline|savings|reset|export]"
+      echo "Usage: track-tokens.sh [report|top|big|tools|categories|agents|skills|memory|models|timeline|savings|codemap|reset|export]"
       ;;
   esac
   exit 0

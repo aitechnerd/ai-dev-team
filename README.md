@@ -232,6 +232,42 @@ Agents with `memory: project` build up knowledge in `.claude/agent-memory/<agent
 
 This is gitignored — it's per-machine knowledge.
 
+## Skill Evaluation & Self-Improvement
+
+Skills improve over time through a built-in eval loop. Three tiers of evaluation, score tracking, and AI-powered improvement suggestions.
+
+```bash
+/eval browse              # Run all tiers on a skill
+/eval --static            # Quick structural check on all skills (free, <5s)
+/eval --improve browse    # Analyze failures + usage data → suggest edits
+/eval --compare A B       # Blind A/B comparison of two skill versions
+/eval --history browse    # Show score history over time
+/eval --regression        # Check all skills against baseline scores
+```
+
+### Evaluation Tiers
+
+| Tier | What | Cost |
+|------|------|------|
+| **Static** | Frontmatter, reference integrity, tool consistency, trigger quality | Free |
+| **LLM Judge** | Scores clarity, completeness, actionability, efficiency, trigger precision (1-5 each) | Subscription |
+| **E2E** | Spawns real Claude Code sessions via `claude -p`, runs test cases, verifies skills work | Subscription |
+
+Composite score: `static × 0.2 + judge × 0.4 + e2e × 0.4` (0-100 scale).
+
+### Self-Improvement Cycle
+
+```
+/eval browse              → Score: 72/100
+/eval --improve browse    → 3 fixes identified from eval failures + usage signals
+Apply fixes               → SKILL.md updated
+/eval browse              → Score: 85/100 ✓
+```
+
+`--improve` analyzes eval results **and** real usage data (retry rates, manual edits after skill runs) to prioritize fixes that matter most. Test cases accumulate — each failure becomes a regression guard.
+
+Results are saved to `.ai-team/evals/` with full history in `history.jsonl`.
+
 ## When to Use This vs Default Claude Code
 
 | Situation | Use |

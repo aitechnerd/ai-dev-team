@@ -62,8 +62,8 @@ install_global() {
     echo ""
     echo "📋 Skills..."
     local skill_count=0
-    if [ -d "$SCRIPT_DIR/.claude/skills" ]; then
-        for skill_dir in "$SCRIPT_DIR/.claude/skills"/*/; do
+    if [ -d "$SCRIPT_DIR/skills" ]; then
+        for skill_dir in "$SCRIPT_DIR/skills"/*/; do
             local skill_name=$(basename "$skill_dir")
             if [ -f "$skill_dir/SKILL.md" ]; then
                 # Copy entire skill directory (SKILL.md + references/ + templates/ + scripts/ + examples/)
