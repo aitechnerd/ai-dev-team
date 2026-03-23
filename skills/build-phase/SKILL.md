@@ -168,7 +168,19 @@ Auto-commit any refactoring changes.
 Spawn **product-owner** (Opus) MODE 3:
 > "Completion summary for {active_name}. Save to $FEATURE_DIR/project-summary.md."
 
-### Step 9: Final Report
+### Step 9: Refresh Context Files
+
+If `.claude/codemap.md` exists, regenerate it to reflect new modules, files, and
+entry points added during this build. Use the same process as `/setup` Phase 3
+(scan directories, identify key modules, detect patterns). Overwrite the file
+in place. This is silent — no user interaction needed.
+
+Also refresh `.claude/stack.md` if new languages/tools were added (e.g., a new
+`package.json` appeared in a Rust project → add React to the stack).
+
+Skip if these files don't exist (project hasn't run `/setup` yet).
+
+### Step 10: Final Report
 
 Present everything to the user:
 

@@ -337,3 +337,10 @@ Group missing scanners into copy-pasteable commands:
 
 Scanners are optional — the team works without them, but DevSecOps and `/scan`
 produce better results with them installed.
+
+If scanners are missing, add this note after the install commands:
+
+```
+After installing, run `/detect` to verify they're picked up.
+No need to re-run full `/setup` — `/detect` just refreshes stack.md.
+```
