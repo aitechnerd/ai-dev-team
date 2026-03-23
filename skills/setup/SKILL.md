@@ -341,6 +341,5 @@ produce better results with them installed.
 If scanners are missing, add this note after the install commands:
 
 ```
-After installing, run `/detect` to verify they're picked up.
-No need to re-run full `/setup` — `/detect` just refreshes stack.md.
+After installing, re-run `/setup` to verify they're detected and update stack.md.
 ```
