@@ -1,6 +1,11 @@
 ---
 name: test-driven-development
-description: Use when implementing any feature or bugfix, before writing implementation code
+description: "TDD / test-driven development methodology: write a failing test first, then minimal code to pass, then refactor. Use when asked for test-first development, red-green-refactor workflow, or when implementing features and bug fixes with TDD discipline. Enforces the iron law: no production code without a failing test."
+allowed-tools:
+  - Bash
+  - Read
+  - Grep
+  - Glob
 ---
 
 # Test-Driven Development (TDD)

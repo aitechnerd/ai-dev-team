@@ -11,6 +11,12 @@ metadata:
   scope: implementation
   output-format: code
   related-skills: fastapi-expert, devops-engineer
+allowed-tools:
+  - Bash
+  - Read
+  - Grep
+  - Glob
+  - Edit
 ---
 
 # Python Pro

@@ -11,6 +11,12 @@ metadata:
   scope: implementation
   output-format: code
   related-skills: fullstack-guardian, security-reviewer, architecture-designer
+allowed-tools:
+  - Bash
+  - Read
+  - Grep
+  - Glob
+  - Edit
 ---
 
 # Secure Code Guardian

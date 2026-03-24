@@ -11,6 +11,12 @@ metadata:
   scope: implementation
   output-format: code
   related-skills: test-master
+allowed-tools:
+  - Bash
+  - Read
+  - Grep
+  - Glob
+  - Edit
 ---
 
 # Rust Engineer

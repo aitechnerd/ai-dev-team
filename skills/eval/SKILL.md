@@ -65,7 +65,17 @@ All eval results go to `.ai-team/evals/`:
 
 Structural checks — no LLM calls.
 
-For each skill directory in `.claude/skills/*/SKILL.md`:
+Determine the skills directory to operate on:
+```bash
+SOURCE_REPO=$(cat ~/.claude/.ai-team-source 2>/dev/null)
+if [ -n "$SOURCE_REPO" ] && [ -d "$SOURCE_REPO/skills" ]; then
+  SKILLS_DIR="$SOURCE_REPO/skills"    # Edit source repo directly
+else
+  SKILLS_DIR="$HOME/.claude/skills"   # Fallback to installed copies
+fi
+```
+
+For each skill directory in `$SKILLS_DIR/*/SKILL.md`:
 
 ### 1.1 Frontmatter Check
 - Has `name` field
@@ -103,7 +113,7 @@ Use `claude -p` to score the skill document on five dimensions. This runs throug
 your Claude Code subscription — no API key or extra charges needed.
 
 ```bash
-cat .claude/skills/{skill}/SKILL.md | claude -p "You are evaluating the quality of an AI agent skill document.
+cat $SKILLS_DIR/{skill}/SKILL.md | claude -p "You are evaluating the quality of an AI agent skill document.
 Score each dimension 1-5 (1=poor, 5=excellent). Be critical — 3 is average.
 
 Dimensions:
@@ -254,7 +264,7 @@ Prioritize issues with STRONG signals (retries, manual edits) over weak signals.
 Output as a structured improvement plan in markdown."
 
 SKILL CONTENT:
-$(cat .claude/skills/{skill}/SKILL.md)
+$(cat $SKILLS_DIR/{skill}/SKILL.md)
 
 EVAL RESULTS:
 $(cat .ai-team/evals/{skill}/eval-{date}.json)
@@ -297,7 +307,11 @@ Ask the user:
 >
 > A) Apply all  B) Apply selectively  C) Review plan first  D) Skip"
 
-If applying, edit the SKILL.md, then re-run Tier 1+2 to verify improvement.
+If applying:
+
+1. Edit `$SKILLS_DIR/{skill}/SKILL.md` (this is the source repo if available, otherwise `~/.claude/skills/`)
+2. If `$SKILLS_DIR` points to the source repo, also copy the edited file to `~/.claude/skills/{skill}/SKILL.md` so the active install is updated immediately.
+3. Re-run Tier 1+2 to verify improvement.
 
 ---
 
@@ -378,9 +392,10 @@ This ensures the same failure never happens twice.
 ## Important Rules
 
 1. **Never modify skills during evaluation.** Evaluate the current state, then improve separately.
-2. **E2E tests are expensive.** Use Tier 1+2 for rapid iteration, Tier 3 for validation.
-3. **Test cases are permanent.** Never delete a test case — only add. Failed tests become regression guards.
-4. **Blind comparisons must be blind.** Never reveal which version is A or B to the judge.
-5. **Track everything.** Every eval run gets saved to history. Data enables trend analysis.
-6. **Improvement suggestions are suggestions.** Always ask before applying edits.
-7. **One change at a time.** When improving, make one edit, re-eval, then decide on the next.
+2. **Always use `$SKILLS_DIR` for reads and writes.** This points to the source repo when available (via `~/.claude/.ai-team-source`), falling back to `~/.claude/skills/`. When editing source repo files, also copy to `~/.claude/skills/` so the active install stays current.
+3. **E2E tests are expensive.** Use Tier 1+2 for rapid iteration, Tier 3 for validation.
+4. **Test cases are permanent.** Never delete a test case — only add. Failed tests become regression guards.
+5. **Blind comparisons must be blind.** Never reveal which version is A or B to the judge.
+6. **Track everything.** Every eval run gets saved to history. Data enables trend analysis.
+7. **Improvement suggestions are suggestions.** Always ask before applying edits.
+8. **One change at a time.** When improving, make one edit, re-eval, then decide on the next.

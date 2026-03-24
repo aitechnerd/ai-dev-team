@@ -125,6 +125,9 @@ install_global() {
         ok "Token tracker hook added (hooks section created)"
     fi
 
+    # --- Source repo marker (so /eval can write back improvements) ---
+    echo "$SCRIPT_DIR" > "$TARGET/.ai-team-source"
+
     echo ""
     echo -e "${GREEN}Global install complete.${NC}"
     echo ""

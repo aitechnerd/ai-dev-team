@@ -1,6 +1,11 @@
 ---
 name: systematic-debugging
-description: Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes
+description: "Enforces a strict 4-phase root-cause-first debugging methodology: investigate before fixing. Use when you need systematic hypothesis-driven debugging, root cause investigation, multi-component evidence gathering, or when previous fix attempts have failed. Distinct from debugging-wizard — this skill blocks fixes until root cause is proven."
+allowed-tools:
+  - Bash
+  - Read
+  - Grep
+  - Glob
 ---
 
 # Systematic Debugging

@@ -1,7 +1,7 @@
 ---
 name: team
 description: Show all agents, commands, and workflows available in AI Dev Team.
-user-invocable: false
+user-invocable: true
 allowed-tools:
   - Read
 ---
