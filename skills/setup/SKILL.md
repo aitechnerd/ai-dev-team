@@ -293,14 +293,18 @@ command -v codex >/dev/null 2>&1 && echo "CODEX=ok" || echo "CODEX=missing"
 
 ### Codex Integration (optional)
 
-If `CODEX=ok`, ask the user:
+If `CODEX=ok`, ask the user **and STOP to wait for their answer** before
+continuing to the final report. Use AskUserQuestion or equivalent — do NOT
+proceed until you have a yes or no:
 
 > Codex CLI detected. Enable dual-agent mode for this project?
-> Codex will provide independent reviews at key pipeline stages:
-> - SOW review (after PO scopes a feature)
-> - Code review (parallel with code-reviewer)
-> - QA validation (parallel with qa-engineer)
+> Codex provides independent second opinions at key pipeline stages:
+> - SOW review — helps PO catch gaps and ambiguities in requirements
+> - Code review — parallel with code-reviewer, catches different issues
+> - QA validation — parallel with qa-engineer, validates against ACs
 > Adds ~2-3 min to builds but catches more issues. (y/n)
+
+**WAIT for the user's response.** Do not print the final report until answered.
 
 If yes, add to `.claude/project-context.md`:
 ```markdown
