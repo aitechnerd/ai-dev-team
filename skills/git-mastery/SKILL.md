@@ -132,17 +132,6 @@ git worktree remove .worktrees/feature-name
 
 Keep `.worktrees/` in `.gitignore`. Verify with `git check-ignore .worktrees/`.
 
-## Reference Guide
-
-Load detailed guidance based on context:
-
-| Topic | Reference | Load When |
-|-------|-----------|-----------|
-| Advanced Operations | `references/advanced-ops.md` | Bisect, cherry-pick, subtree, reflog recovery |
-| Merge Strategies | `references/merge-strategies.md` | Merge vs rebase, conflict resolution patterns |
-| Hooks & Automation | `references/hooks-automation.md` | Pre-commit hooks, CI integration, signing |
-| Monorepo Patterns | `references/monorepo.md` | Sparse checkout, subtree, multi-package repos |
-
 ## Anti-Patterns
 
 - **Giant commits** — If `git diff --stat` shows 20+ files, break it up

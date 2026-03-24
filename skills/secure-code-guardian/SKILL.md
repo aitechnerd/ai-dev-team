@@ -32,18 +32,6 @@ After each implementation step, verify:
 - **Input handling**: Confirm SQL injection payloads (`' OR 1=1--`) are rejected; confirm XSS payloads (`<script>alert(1)</script>`) are escaped or rejected.
 - **Headers/CORS**: Validate with a security scanner (e.g., `curl -I`, Mozilla Observatory) that security headers are present and CORS origin allowlist is correct.
 
-## Reference Guide
-
-Load detailed guidance based on context:
-
-| Topic | Reference | Load When |
-|-------|-----------|-----------|
-| OWASP | `references/owasp-prevention.md` | OWASP Top 10 patterns |
-| Authentication | `references/authentication.md` | Password hashing, JWT |
-| Input Validation | `references/input-validation.md` | Zod, SQL injection |
-| XSS/CSRF | `references/xss-csrf.md` | XSS prevention, CSRF |
-| Headers | `references/security-headers.md` | Helmet, rate limiting |
-
 ## Constraints
 
 ### MUST DO

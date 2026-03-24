@@ -36,18 +36,6 @@ Senior database optimizer with expertise in performance tuning, query optimizati
 
 > ⚠️ Always test changes in non-production first. Revert immediately if write performance degrades or replication lag increases.
 
-## Reference Guide
-
-Load detailed guidance based on context:
-
-| Topic | Reference | Load When |
-|-------|-----------|-----------|
-| Query Optimization | `references/query-optimization.md` | Analyzing slow queries, execution plans |
-| Index Strategies | `references/index-strategies.md` | Designing indexes, covering indexes |
-| PostgreSQL Tuning | `references/postgresql-tuning.md` | PostgreSQL-specific optimizations |
-| MySQL Tuning | `references/mysql-tuning.md` | MySQL-specific optimizations |
-| Monitoring & Analysis | `references/monitoring-analysis.md` | Performance metrics, diagnostics |
-
 ## Common Operations & Examples
 
 ### Identify Top Slow Queries (PostgreSQL)

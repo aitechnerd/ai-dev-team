@@ -23,18 +23,6 @@ metadata:
 4. **Verify** - Run `EXPLAIN ANALYZE` and confirm no sequential scans on large tables; if query does not meet sub-100ms target, iterate on index selection or query rewrite before proceeding
 5. **Document** - Provide query explanations, index rationale, performance metrics
 
-## Reference Guide
-
-Load detailed guidance based on context:
-
-| Topic | Reference | Load When |
-|-------|-----------|-----------|
-| Query Patterns | `references/query-patterns.md` | JOINs, CTEs, subqueries, recursive queries |
-| Window Functions | `references/window-functions.md` | ROW_NUMBER, RANK, LAG/LEAD, analytics |
-| Optimization | `references/optimization.md` | EXPLAIN plans, indexes, statistics, tuning |
-| Database Design | `references/database-design.md` | Normalization, keys, constraints, schemas |
-| Dialect Differences | `references/dialect-differences.md` | PostgreSQL vs MySQL vs SQL Server specifics |
-
 ## Quick-Reference Examples
 
 ### CTE Pattern

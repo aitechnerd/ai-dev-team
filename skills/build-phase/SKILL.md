@@ -42,7 +42,8 @@ Spawn **software-engineer** (Opus) MODE 2:
 
 ### After Implementation
 If more phases remain -> report progress, suggest next phase or `/build-phase all`.
-If all phases COMPLETE -> run validation pipeline (same as autonomous steps 2-5).
+If all phases COMPLETE -> **automatically** run the validation pipeline (Steps 2-7
+from autonomous mode below). Do NOT ask the user — just run it. This is mandatory.
 
 ---
 
@@ -97,7 +98,7 @@ Spawn **triage** (Haiku):
 
 ### Step 3: Code Review + DevSecOps (parallel where possible)
 
-Run **code-reviewer** and **devsecops** assessment in parallel when both need to run:
+Run **code-reviewer**, **devsecops**, and optionally **Codex** in parallel:
 
 Spawn **code-reviewer** (Sonnet):
 > "Review feature {active_name}. Docs: $FEATURE_DIR.
@@ -110,8 +111,31 @@ Otherwise spawn **devsecops** (Sonnet) MODE 2:
 > "Security scan for {active_name}. Triage: {scan-triage output}.
 > Reports in $FEATURE_DIR/scans/. Save to $FEATURE_DIR/security-scan.md."
 
-**If either requests changes** (autonomous handling):
-- Spawn SE MODE 3 to fix issues from both reviews
+**Codex Code Review — CONDITIONAL** (runs in parallel with above):
+Only if `.claude/project-context.md` contains `Codex:` with `enabled`.
+
+```bash
+codex review \
+  --base $(git merge-base HEAD main || echo "main") \
+  --full-auto \
+  -o $FEATURE_DIR/codex-code-review.md
+```
+
+If `codex review` is not available or fails, fall back to:
+```bash
+git diff main...HEAD | codex exec \
+  --full-auto \
+  -o $FEATURE_DIR/codex-code-review.md \
+  "Review this diff. Focus on bugs, edge cases, and issues the primary reviewer might miss.
+Output a numbered list. Prefix: [critical], [major], [minor], [suggestion].
+If clean, say 'No issues found.'"
+```
+
+**Merge findings**: Read `codex-code-review.md`. For any [critical] or [major] items
+not already caught by code-reviewer, add them to the fix list.
+
+**If any reviewer requests changes** (autonomous handling):
+- Spawn SE MODE 3 to fix issues from all reviews
 - Auto-commit fixes
 - If CRITICAL security findings persist -> STOP, escalate to user
 
@@ -128,6 +152,22 @@ Spawn **triage** (Haiku):
 Spawn **qa-engineer** (Sonnet):
 > "Validate {active_name}. AC triage: {paste ac-check output}.
 > Save to $FEATURE_DIR/qa-report.md."
+
+**Codex QA — CONDITIONAL** (parallel with qa-engineer):
+Only if `.claude/project-context.md` contains `Codex:` with `enabled`.
+
+```bash
+(cat $FEATURE_DIR/sow.md; echo -e "\n---\n"; git diff main...HEAD) | codex exec \
+  --full-auto \
+  -o $FEATURE_DIR/codex-qa-review.md \
+  "You are a QA engineer. The first section is the SOW with acceptance criteria.
+The second section is the implementation diff.
+Validate the implementation against EVERY acceptance criterion.
+For each AC, state PASS or FAIL with a brief reason.
+Then list any edge cases or scenarios not covered by the ACs."
+```
+
+Merge Codex QA findings into the overall QA result.
 
 **If FAIL** (autonomous handling):
 1. Spawn SE MODE 3 to fix critical/high issues

@@ -288,6 +288,54 @@ grep -q "ai-team.md" CLAUDE.md 2>/dev/null && echo "CLAUDE_REF=ok" || echo "CLAU
 [ -f ".claude/stack.md" ] && echo "STACK=ok" || echo "STACK=missing"
 [ -f ".claude/project-context.md" ] && echo "CONTEXT=ok" || echo "CONTEXT=missing"
 [ -f ".claude/codemap.md" ] && echo "CODEMAP=ok" || echo "CODEMAP=missing"
+command -v codex >/dev/null 2>&1 && echo "CODEX=ok" || echo "CODEX=missing"
+```
+
+### Codex Integration (optional)
+
+If `CODEX=ok`, ask the user:
+
+> Codex CLI detected. Enable dual-agent mode for this project?
+> Codex will provide independent reviews at key pipeline stages:
+> - SOW review (after PO scopes a feature)
+> - Code review (parallel with code-reviewer)
+> - QA validation (parallel with qa-engineer)
+> Adds ~2-3 min to builds but catches more issues. (y/n)
+
+If yes, add to `.claude/project-context.md`:
+```markdown
+## External Agents
+- **Codex:** enabled (SOW review, code review, QA)
+```
+
+Also generate an `AGENTS.md` file at the project root (if it doesn't exist) that gives
+Codex the same project context Claude has:
+
+```markdown
+# Project Context for Codex
+
+You are acting as an independent reviewer for this project.
+Your reviews are consumed by Claude Code's AI Dev Team pipeline.
+
+## Output Format
+- Be concise — your output is parsed by another AI, not a human
+- Use numbered lists for issues/suggestions
+- Prefix severity: [critical], [major], [minor], [suggestion]
+- Focus on gaps, edge cases, and things the primary agent might miss
+
+## Project
+{copy product section from project-context.md}
+
+## Stack
+{copy from stack.md}
+
+## Conventions
+{copy conventions from project-context.md}
+```
+
+If `CODEX=missing`, add to the final report:
+```
+ℹ Codex CLI — not installed (optional: brew install codex for dual-agent reviews)
 ```
 
 ### Auto-fix

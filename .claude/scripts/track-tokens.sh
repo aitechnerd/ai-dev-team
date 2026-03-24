@@ -342,6 +342,58 @@ if [[ "${1:-}" != "" ]] && [[ ! "${1:-}" =~ ^\{ ]]; then
       echo "  then run this report. Compare against projects without codemap."
       ;;
 
+    compression)
+      echo "═══════════════════════════════════════════════════"
+      echo "  Output Compression Savings"
+      echo "═══════════════════════════════════════════════════"
+      echo ""
+      local SAVINGS_LOG="${HOME}/.local/share/claude-token-tracker/savings.jsonl"
+      if [[ ! -f "$SAVINGS_LOG" ]] || [[ ! -s "$SAVINGS_LOG" ]]; then
+        echo "  No compression data yet. Enable the compress-bash.sh hook."
+        echo ""
+        echo "  Add to PreToolUse in settings.json:"
+        echo '    {"matcher":"Bash","hooks":[{"type":"command","command":"~/.claude/scripts/compress-bash.sh","timeout":5000}]}'
+      else
+        local total_original=$(jq -s '[.[].original_chars] | add // 0' "$SAVINGS_LOG")
+        local total_compressed=$(jq -s '[.[].compressed_chars] | add // 0' "$SAVINGS_LOG")
+        local total_saved=$(jq -s '[.[].saved_chars] | add // 0' "$SAVINGS_LOG")
+        local total_calls=$(wc -l < "$SAVINGS_LOG" | tr -d ' ')
+        local saved_tokens=$((total_saved / 4))
+
+        printf "  Commands compressed:  %s\n" "$total_calls"
+        printf "  Original output:      %s chars (%s tokens)\n" "$total_original" "$((total_original / 4))"
+        printf "  Compressed output:    %s chars (%s tokens)\n" "$total_compressed" "$((total_compressed / 4))"
+        printf "  Saved:                %s chars (%s tokens)\n" "$total_saved" "$saved_tokens"
+        if (( total_original > 0 )); then
+          printf "  Reduction:            %s%%\n" "$((total_saved * 100 / total_original))"
+        fi
+        echo ""
+        echo "  By filter type:"
+        jq -s '
+          group_by(.filter) |
+          map({
+            filter: .[0].filter,
+            count: length,
+            saved: ([.[].saved_chars] | add),
+            pct: (([.[].saved_chars] | add) * 100 / ([.[].original_chars] | add) | floor)
+          }) |
+          sort_by(-.saved)
+        ' "$SAVINGS_LOG" | jq -r '.[] | "    \(.filter | . + " " * ([12 - length, 1] | max))  \(.count) calls   \(.saved) chars saved   \(.pct)% reduction"'
+        echo ""
+        echo "  By runner:"
+        jq -s '
+          group_by(.runner) |
+          map({
+            runner: .[0].runner,
+            count: length,
+            saved: ([.[].saved_chars] | add),
+            pct: (([.[].saved_chars] | add) * 100 / ([.[].original_chars] | add) | floor)
+          }) |
+          sort_by(-.saved)
+        ' "$SAVINGS_LOG" | jq -r '.[] | "    \(.runner | . + " " * ([16 - length, 1] | max))  \(.count) calls   \(.saved) chars saved   \(.pct)%"'
+      fi
+      ;;
+
     reset)
       rm -f "$LOG_FILE"
       echo "Tracker data cleared."
@@ -365,6 +417,7 @@ fi
 input=$(cat)
 tool_name=$(echo "$input" | jq -r '.tool_name // empty')
 
+
 if [[ -z "$tool_name" ]]; then
   echo '{}'
   exit 0
@@ -373,32 +426,41 @@ fi
 # Extract common fields
 session_id=$(echo "$input" | jq -r '.session_id // empty')
 
-# Detect model from environment (Claude Code sets this)
-model="${CLAUDE_MODEL:-${ANTHROPIC_MODEL:-unknown}}"
+# Extract model from the transcript (last assistant message with a model field)
+transcript_path=$(echo "$input" | jq -r '.transcript_path // empty')
+model=""
+if [[ -n "$transcript_path" ]] && [[ -f "$transcript_path" ]]; then
+  # Search backwards from end of file — fast even on large transcripts
+  model=$(tail -r "$transcript_path" 2>/dev/null | /usr/bin/grep -m1 '"model"' 2>/dev/null | jq -r '.message.model // empty' 2>/dev/null || true)
+  # Fallback for Linux (no tail -r)
+  if [[ -z "$model" ]]; then
+    model=$(tac "$transcript_path" 2>/dev/null | /usr/bin/grep -m1 '"model"' 2>/dev/null | jq -r '.message.model // empty' 2>/dev/null || true)
+  fi
+fi
 
 # ---- Measure output size ----
 output_chars=0
 
 case "$tool_name" in
   Bash)
-    stdout=$(echo "$input" | jq -r '.tool_output.stdout // empty')
-    stderr=$(echo "$input" | jq -r '.tool_output.stderr // empty')
+    stdout=$(echo "$input" | jq -r '.tool_response.stdout // empty')
+    stderr=$(echo "$input" | jq -r '.tool_response.stderr // empty')
     output_chars=$(( ${#stdout} + ${#stderr} ))
     ;;
   Read)
-    content=$(echo "$input" | jq -r '.tool_output // empty')
+    content=$(echo "$input" | jq -r '.tool_response.file.content // empty')
     output_chars=${#content}
     ;;
   Grep|Glob)
-    content=$(echo "$input" | jq -r '.tool_output // empty')
+    content=$(echo "$input" | jq -c '.tool_response // empty')
     output_chars=${#content}
     ;;
   Agent)
-    content=$(echo "$input" | jq -r '.tool_output.result // .tool_output // empty')
+    content=$(echo "$input" | jq -r '.tool_response.result // .tool_response // empty')
     output_chars=${#content}
     ;;
   *)
-    content=$(echo "$input" | jq -r '.tool_output // empty' 2>/dev/null)
+    content=$(echo "$input" | jq -r '.tool_response // empty' 2>/dev/null)
     output_chars=${#content}
     ;;
 esac

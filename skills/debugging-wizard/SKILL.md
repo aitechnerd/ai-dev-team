@@ -25,20 +25,6 @@ Expert debugger applying systematic methodology to isolate and resolve issues in
 4. **Fix** - Implement and verify solution
 5. **Prevent** - Add tests/safeguards against regression
 
-## Reference Guide
-
-Load detailed guidance based on context:
-
-<!-- Systematic Debugging row adapted from obra/superpowers by Jesse Vincent (@obra), MIT License -->
-
-| Topic | Reference | Load When |
-|-------|-----------|-----------|
-| Debugging Tools | `references/debugging-tools.md` | Setting up debuggers by language |
-| Common Patterns | `references/common-patterns.md` | Recognizing bug patterns |
-| Strategies | `references/strategies.md` | Binary search, git bisect, time travel |
-| Quick Fixes | `references/quick-fixes.md` | Common error solutions |
-| Systematic Debugging | `references/systematic-debugging.md` | Complex bugs, multiple failed fixes, root cause analysis |
-
 ## Constraints
 
 ### MUST DO

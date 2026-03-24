@@ -74,11 +74,7 @@ For each skill directory in `.claude/skills/*/SKILL.md`:
 - `name` matches directory name
 
 ### 1.2 Reference Integrity
-- All file references in the SKILL.md actually exist:
-  - `references/*.md` files mentioned
-  - `templates/*.md` files mentioned
-  - `scripts/*.py` files mentioned
-  - `examples/*.py` files mentioned
+- All file references in the SKILL.md actually exist
 - No broken relative paths
 
 ### 1.3 Command Consistency
@@ -88,7 +84,7 @@ For each skill directory in `.claude/skills/*/SKILL.md`:
 
 ### 1.4 Template Freshness (if .tmpl exists)
 ```bash
-bash .claude/scripts/gen-skill-docs.sh --check
+bash ~/.claude/scripts/gen-skill-docs.sh --check
 ```
 
 ### 1.5 Description Trigger Quality

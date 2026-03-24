@@ -335,6 +335,8 @@ Spawn the **product-owner** (Opus):
 
 ### Step 2.5: Quick Reviews on SOW (parallel)
 
+Run these in parallel where possible:
+
 **SE Feasibility Check** (Sonnet):
 
 Spawn **software-engineer** with **model: sonnet**:
@@ -351,7 +353,32 @@ Spawn **ux-designer** (Sonnet):
 > Flag missing states, accessibility gaps, user flow issues.
 > Save to .ai-team/$FEATURE_NAME/ux-scope-review.md"
 
-Present findings, ask if user wants to adjust scope.
+**Codex SOW Review** — CONDITIONAL: only if `.claude/project-context.md` contains
+`Codex:` with `enabled` in the External Agents section.
+
+```bash
+cat .ai-team/$FEATURE_NAME/sow.md | codex exec \
+  --full-auto \
+  -o .ai-team/$FEATURE_NAME/codex-sow-review.md \
+  "You are reviewing a Statement of Work (SOW) for a software feature.
+Review it for:
+1. Missing edge cases or error scenarios
+2. Ambiguous or contradictory requirements
+3. Missing acceptance criteria
+4. Security or compliance gaps
+5. Scope risks (things that seem simple but are complex)
+
+Output a numbered list. Prefix each with [critical], [major], [minor], or [suggestion].
+If the SOW is solid, say 'No issues found.' and explain why it's good."
+```
+
+Present all findings together. For Codex suggestions, show them to the user with:
+> "**Codex review of SOW** found [N] suggestions:
+> [list items]
+>
+> Want to incorporate any of these before planning?"
+
+If user says yes, update the SOW accordingly. Then proceed to planning.
 
 ### Step 3: Software Engineer — Technical Plan
 

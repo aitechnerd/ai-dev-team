@@ -37,18 +37,6 @@ Modern Python 3.11+ specialist focused on type-safe, async-first, production-rea
    - If tests fail: debug assertions, update fixtures, and iterate until green
    - If ruff/black reports issues: apply auto-fixes, then re-validate
 
-## Reference Guide
-
-Load detailed guidance based on context:
-
-| Topic | Reference | Load When |
-|-------|-----------|-----------|
-| Type System | `references/type-system.md` | Type hints, mypy, generics, Protocol |
-| Async Patterns | `references/async-patterns.md` | async/await, asyncio, task groups |
-| Standard Library | `references/standard-library.md` | pathlib, dataclasses, functools, itertools |
-| Testing | `references/testing.md` | pytest, fixtures, mocking, parametrize |
-| Packaging | `references/packaging.md` | poetry, pip, pyproject.toml, distribution |
-
 ## Constraints
 
 ### MUST DO

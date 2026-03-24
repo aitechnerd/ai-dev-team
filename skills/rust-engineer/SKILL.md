@@ -25,18 +25,6 @@ Senior Rust engineer with deep expertise in Rust 2021 edition, systems programmi
 4. **Handle errors** — Use `Result`/`Option` with `?` operator and custom error types via `thiserror`
 5. **Validate** — Run `cargo clippy --all-targets --all-features`, `cargo fmt --check`, and `cargo test`; fix all warnings before finalising
 
-## Reference Guide
-
-Load detailed guidance based on context:
-
-| Topic | Reference | Load When |
-|-------|-----------|-----------|
-| Ownership | `references/ownership.md` | Lifetimes, borrowing, smart pointers, Pin |
-| Traits | `references/traits.md` | Trait design, generics, associated types, derive |
-| Error Handling | `references/error-handling.md` | Result, Option, ?, custom errors, thiserror |
-| Async | `references/async.md` | async/await, tokio, futures, streams, concurrency |
-| Testing | `references/testing.md` | Unit/integration tests, proptest, benchmarks |
-
 ## Key Patterns with Examples
 
 ### Ownership & Lifetimes
