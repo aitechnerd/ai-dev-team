@@ -63,7 +63,8 @@ All eval results go to `.ai-team/evals/`:
 
 ## Tier 1: Static Validation (free, <5s)
 
-Structural checks — no LLM calls.
+Structural checks — no LLM calls. **Token-efficient: use Bash to parse files
+instead of reading each SKILL.md into context.**
 
 Determine the skills directory to operate on:
 ```bash
@@ -75,7 +76,18 @@ else
 fi
 ```
 
-For each skill directory in `$SKILLS_DIR/*/SKILL.md`:
+### Run static checks via script (DO NOT read each SKILL.md individually)
+
+Run the static validator script which checks all skills in a single Bash call
+and returns a compact report. This avoids reading 30+ SKILL.md files into context
+(~42K tokens). Only read individual SKILL.md files if a skill FAILS and you need
+to investigate or fix it.
+
+```bash
+bash ~/.claude/scripts/eval-static.sh "$SKILLS_DIR"
+```
+
+The script checks each `$SKILLS_DIR/*/SKILL.md`:
 
 ### 1.1 Frontmatter Check
 - Has `name` field
