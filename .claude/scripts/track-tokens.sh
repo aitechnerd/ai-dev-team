@@ -430,11 +430,12 @@ session_id=$(echo "$input" | jq -r '.session_id // empty')
 transcript_path=$(echo "$input" | jq -r '.transcript_path // empty')
 model=""
 if [[ -n "$transcript_path" ]] && [[ -f "$transcript_path" ]]; then
-  # Search backwards from end of file — fast even on large transcripts
-  model=$(tail -r "$transcript_path" 2>/dev/null | /usr/bin/grep -m1 '"model"' 2>/dev/null | jq -r '.message.model // empty' 2>/dev/null || true)
+  # Search backwards for "type":"assistant" entries which carry the model
+  # Use a narrow grep pattern to avoid matching tool inputs or hook payloads
+  model=$(tail -r "$transcript_path" 2>/dev/null | /usr/bin/grep -m1 '"type":"assistant"' 2>/dev/null | jq -r '.message.model // empty' 2>/dev/null || true)
   # Fallback for Linux (no tail -r)
   if [[ -z "$model" ]]; then
-    model=$(tac "$transcript_path" 2>/dev/null | /usr/bin/grep -m1 '"model"' 2>/dev/null | jq -r '.message.model // empty' 2>/dev/null || true)
+    model=$(tac "$transcript_path" 2>/dev/null | /usr/bin/grep -m1 '"type":"assistant"' 2>/dev/null | jq -r '.message.model // empty' 2>/dev/null || true)
   fi
 fi
 
