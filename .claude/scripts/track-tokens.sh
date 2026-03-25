@@ -444,17 +444,32 @@ fi
 # Extract common fields
 session_id=$(echo "$input" | jq -r '.session_id // empty')
 
-# Extract model from the transcript (last assistant message with a model field)
+# Extract model — three strategies, tried in order:
+# 1. Transcript: grep for last assistant message with model field
+# 2. Session cache: reuse model from a previous tool call in same session
+# 3. Give up: leave empty (will be logged as-is)
 transcript_path=$(echo "$input" | jq -r '.transcript_path // empty')
 model=""
+
+# Strategy 1: read from transcript
 if [[ -n "$transcript_path" ]] && [[ -f "$transcript_path" ]]; then
-  # Search backwards for "type":"assistant" entries which carry the model
-  # Use a narrow grep pattern to avoid matching tool inputs or hook payloads
   model=$(tail -r "$transcript_path" 2>/dev/null | /usr/bin/grep -m1 '"type":"assistant"' 2>/dev/null | jq -r '.message.model // empty' 2>/dev/null || true)
   # Fallback for Linux (no tail -r)
   if [[ -z "$model" ]]; then
     model=$(tac "$transcript_path" 2>/dev/null | /usr/bin/grep -m1 '"type":"assistant"' 2>/dev/null | jq -r '.message.model // empty' 2>/dev/null || true)
   fi
+fi
+
+# Strategy 2: session model cache (covers subagent calls where transcript isn't available)
+SESSION_MODEL_DIR="${LOG_DIR}/session-models"
+mkdir -p "$SESSION_MODEL_DIR"
+
+if [[ -n "$model" ]] && [[ -n "$session_id" ]]; then
+  # Cache this model for the session
+  echo "$model" > "${SESSION_MODEL_DIR}/${session_id}" 2>/dev/null || true
+elif [[ -z "$model" ]] && [[ -n "$session_id" ]]; then
+  # Try to read cached model for this session
+  model=$(cat "${SESSION_MODEL_DIR}/${session_id}" 2>/dev/null || true)
 fi
 
 # ---- Measure output size ----
