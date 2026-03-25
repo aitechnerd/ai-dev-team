@@ -30,6 +30,22 @@ Run once per project. Re-run after major architecture changes.
 
 ---
 
+## Re-run Behavior
+
+When `/setup` runs on a project that already has context files, it MUST still
+regenerate them — **never skip a phase because the file already exists**.
+
+| File | Re-run behavior |
+|------|----------------|
+| `stack.md` | Always overwrite — re-detect everything |
+| `project-context.md` | Re-scan codebase, diff against existing, show user what drifted |
+| `codemap.md` | Always overwrite — re-scan codebase |
+
+The whole point of re-running `/setup` is to catch drift. If files exist, that
+means the project was set up before — but things may have changed.
+
+---
+
 ## Phase 1: Stack Detection
 
 Detect languages, frameworks, and tools automatically.
@@ -123,6 +139,31 @@ Always overwrite — this file is regenerated every time `/setup` runs.
 ---
 
 ## Phase 2: Project Context (Interactive)
+
+### If `.claude/project-context.md` already exists:
+
+Do a full re-discovery — don't ask the user to remember what changed.
+
+1. Read the existing `project-context.md` and save it as the "old" baseline.
+2. Re-scan the codebase for current state: check `package.json`, `requirements.txt`,
+   `Cargo.toml`, config files, database schemas, Dockerfiles, CI configs, README, etc.
+3. Compare what the codebase shows NOW vs what the old context says.
+4. Show the user a **diff summary** — what's new, what's gone, what looks different:
+
+> **Project context drift detected:**
+> - **Added:** Docker setup (Dockerfile + docker-compose.yml not in previous context)
+> - **Changed:** Database switched from SQLite to PostgreSQL (found in settings.py)
+> - **Changed:** New dependencies: celery, redis (in requirements.txt)
+> - **Removed:** References to Flask (now using FastAPI based on imports)
+> - **Unchanged:** Product purpose, users, compliance, git workflow
+>
+> I'll update project-context.md with these changes. Anything else to add or correct?
+
+5. Wait for user confirmation, then regenerate the file with updated info.
+   Preserve any manually-written sections (domain knowledge, out of scope) unless
+   the user says to change them.
+
+### If no project-context.md exists (first run):
 
 Ask the user these questions. Skip any that are already clear from the codebase.
 Gather context before writing anything.
