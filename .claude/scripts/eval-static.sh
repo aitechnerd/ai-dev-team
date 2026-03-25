@@ -78,9 +78,11 @@ for skill_dir in "$SKILLS_DIR"/*/; do
   fi
 
   # === 1.2 Reference Integrity ===
+  # Only check STATIC references — files bundled with the skill (references/, templates/).
+  # Skip RUNTIME paths — files created during execution in the target project
+  # (e.g., .claude/stack.md, .ai-team/evals/*, $FEATURE_DIR/*, scans/).
   skill_total=$((skill_total + 1))
   ref_ok=true
-  # Find file references in body (paths like scripts/foo.sh, templates/bar.md)
   refs=$(echo "$body" | grep -oE '[a-zA-Z0-9_/-]+\.(sh|py|md|json|yaml|yml|tmpl|toml)' | sort -u)
   for ref in $refs; do
     # Skip URLs, code examples, template vars, and obvious non-paths
@@ -91,8 +93,30 @@ for skill_dir in "$SKILLS_DIR"/*/; do
     [[ "$ref" == *"FEATURE_NAME"* ]] && continue
     [[ "$ref" == *"NAME/"* ]] && continue
     [[ "$ref" == *"/tmp/"* ]] && continue
-    # Check relative to skill dir and home
-    if [[ -f "${skill_dir}${ref}" ]] || [[ -f "${HOME}/.claude/${ref}" ]] || [[ -f "${HOME}/.claude/scripts/${ref}" ]]; then
+
+    # Skip runtime paths — these are created/referenced by skills at execution time
+    # in the target project, not bundled with the skill itself.
+    # Matches both .claude/foo and claude/foo (regex strips leading dot)
+    [[ "$ref" == *"claude/stack"* ]] && continue
+    [[ "$ref" == *"claude/codemap"* ]] && continue
+    [[ "$ref" == *"claude/project-context"* ]] && continue
+    [[ "$ref" == *"claude/scripts/"* ]] && continue
+    [[ "$ref" == *"claude/stacks/"* ]] && continue
+    [[ "$ref" == *"claude/agents/"* ]] && continue
+    [[ "$ref" == *".ai-team/"* ]] && continue
+    [[ "$ref" == *"ai-team/"* ]] && continue
+    [[ "$ref" == *"docs/features/"* ]] && continue
+    [[ "$ref" == *"-report.md"* ]] && continue
+    [[ "$ref" == *"-review.md"* ]] && continue
+    [[ "$ref" == *"-scan.md"* ]] && continue
+    [[ "$ref" == *"-summary.md"* ]] && continue
+    [[ "$ref" == *"history.json"* ]] && continue
+    [[ "$ref" == *"baseline.json"* ]] && continue
+    [[ "$ref" == *"scans/"* ]] && continue
+
+    # Check relative to skill dir, parent skills dir, and home
+    if [[ -f "${skill_dir}${ref}" ]] || [[ -f "${SKILLS_DIR}/${ref}" ]] || \
+       [[ -f "${HOME}/.claude/${ref}" ]] || [[ -f "${HOME}/.claude/scripts/${ref}" ]]; then
       continue
     fi
     # Only flag if it looks like a real path (has a slash)
