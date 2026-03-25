@@ -191,15 +191,33 @@ if [[ "${1:-}" != "" ]] && [[ ! "${1:-}" =~ ^\{ ]]; then
       echo "  Usage by Model"
       echo "═══════════════════════════════════════════════════"
       echo ""
+      echo "  All tool calls:"
       jq -s '
         group_by(.model) |
         map({
-          model: (.[0].model // "unknown"),
+          model: (.[0].model | if . == "" then "(parent model — see note)" else . end),
           count: length,
           tokens: ([.[].estimated_tokens] | add)
         }) |
         sort_by(-.tokens)
-      ' "$LOG_FILE" | jq -r '.[] | "  \(.model | . + " " * ([35 - length, 1] | max))  \(.count) calls   \(.tokens) tokens"'
+      ' "$LOG_FILE" | jq -r '.[] | "  \(.model | . + " " * ([40 - length, 1] | max))  \(.count) calls   \(.tokens) tokens"'
+      echo ""
+      echo "  Agent calls by resolved model:"
+      jq -s '
+        [.[] | select(.category == "agent")] |
+        group_by(.model) |
+        map({
+          model: (.[0].model | if . == "" then "(unresolved)" else . end),
+          agents: ([.[].agent_type] | unique | join(", ")),
+          count: length,
+          tokens: ([.[].estimated_tokens] | add)
+        }) |
+        sort_by(-.tokens)
+      ' "$LOG_FILE" | jq -r '.[] | "  \(.model | . + " " * ([25 - length, 1] | max))  \(.count) calls  \(.tokens) tok  [\(.agents)]"'
+      echo ""
+      echo "  Note: \"(agent-def)\" = model from agent definition file."
+      echo "  \"(agent)\" = explicit model override in Agent tool call."
+      echo "  Empty = transcript parent model (may not reflect actual agent model)."
       ;;
 
     timeline|daily)
@@ -580,8 +598,31 @@ case "$tool_name" in
     category="agent"
     subcategory="$agent_type"
     operation_pattern="agent:$agent_type"
+
+    # Resolve the actual model the agent runs on:
+    # 1. Explicit model override in tool_input takes priority
+    # 2. Otherwise, read the agent definition's frontmatter model field
+    # 3. Fall back to parent model (from transcript) if neither found
     if [[ -n "$agent_model" ]]; then
       model="${agent_model} (agent)"
+    else
+      # Try to read model from agent definition file
+      agent_def="${HOME}/.claude/agents/${agent_type}.md"
+      if [[ ! -f "$agent_def" ]]; then
+        # Check project-local agents directory
+        for d in .claude/agents agents; do
+          if [[ -f "${d}/${agent_type}.md" ]]; then
+            agent_def="${d}/${agent_type}.md"
+            break
+          fi
+        done
+      fi
+      if [[ -f "$agent_def" ]]; then
+        def_model=$(sed -n '/^---$/,/^---$/{ s/^model:[[:space:]]*//p; }' "$agent_def" 2>/dev/null | head -1)
+        if [[ -n "$def_model" ]]; then
+          model="${def_model} (agent-def)"
+        fi
+      fi
     fi
     ;;
 

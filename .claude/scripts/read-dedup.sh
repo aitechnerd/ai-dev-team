@@ -16,8 +16,9 @@ SESSION_DIR="${HOME}/.local/share/claude-token-tracker/sessions"
 CACHE_DIR="${SESSION_DIR}/read-cache"
 mkdir -p "$SESSION_DIR" "$CACHE_DIR"
 
-# Cache TTL in seconds (30 minutes — covers full pipeline runs)
-CACHE_TTL=1800
+# Cache TTL in seconds
+CACHE_TTL=1800       # 30 minutes — stable files (SKILL.md, CLAUDE.md, memory, stack profiles)
+PIPELINE_TTL=600     # 10 minutes — pipeline files (SOW, plans) that agents may update
 
 input=$(cat)
 file_path=$(echo "$input" | jq -r '.tool_input.file_path // empty')
@@ -30,7 +31,11 @@ fi
 
 # ---- Layer 2: Time-based cache for stable files ----
 # These files don't change during a session, so cache across agent boundaries.
+# Two tiers:
+#   - "stable" files (SKILL.md, CLAUDE.md, memory): 30-min TTL
+#   - "pipeline" files (SOW, plans, shared-context): 10-min TTL (may be updated by agents)
 is_stable=false
+is_pipeline=false
 case "$file_path" in
   */SKILL.md|*/CLAUDE.md|*/MEMORY.md|*/ai-team.md)
     is_stable=true ;;
@@ -38,33 +43,62 @@ case "$file_path" in
     is_stable=true ;;
   */codemap.md|*/stack.md|*/project-context.md)
     is_stable=true ;;
+  */.claude/stacks/*.md|*/.claude/agents/*.md)
+    is_stable=true ;;
+  */.ai-team/*/sow.md|*/.ai-team/*/technical-plan.md)
+    is_pipeline=true ;;
+  */.ai-team/*/shared-context.md|*/.ai-team/*/plan-approved.md)
+    is_pipeline=true ;;
+  */.ai-team/*/feasibility-check.md|*/.ai-team/*/devsecops-plan-review.md)
+    is_pipeline=true ;;
+  */docs/features/*/sow.md|*/docs/features/*/technical-plan.md)
+    is_pipeline=true ;;
 esac
 
-if $is_stable; then
+if $is_stable || $is_pipeline; then
+  # Stable files: 30-min TTL. Pipeline files: 10-min TTL (agents may update them).
+  if $is_stable; then
+    ttl=$CACHE_TTL
+  else
+    ttl=$PIPELINE_TTL
+  fi
+
   # Use md5 hash of path as cache key (safe filename)
   cache_key=$(echo -n "$file_path" | md5 2>/dev/null || echo -n "$file_path" | md5sum 2>/dev/null | cut -d' ' -f1)
   cache_file="${CACHE_DIR}/${cache_key}"
 
   if [[ -f "$cache_file" ]]; then
-    # Check if cache is still fresh
-    cache_age=$(( $(date +%s) - $(stat -f%m "$cache_file" 2>/dev/null || stat -c%Y "$cache_file" 2>/dev/null || echo 0) ))
-    if (( cache_age < CACHE_TTL )); then
-      jq -nc \
-        --arg path "$file_path" \
-        --argjson age "$cache_age" \
-        '{
-          hookSpecificOutput: {
-            hookEventName: "PreToolUse",
-            permissionDecision: "block",
-            permissionDecisionReason: ("Cached: " + $path + " was read " + ($age | tostring) + "s ago and hasn'\''t changed. Use previous content.")
-          }
-        }'
-      exit 0
-    fi
-  fi
+    # Check if the file was modified on disk since the cache marker was created
+    cache_mtime=$(stat -f%m "$cache_file" 2>/dev/null || stat -c%Y "$cache_file" 2>/dev/null || echo 0)
+    file_mtime=$(stat -f%m "$file_path" 2>/dev/null || stat -c%Y "$file_path" 2>/dev/null || echo 0)
 
-  # Create/touch cache marker
-  echo "$file_path" > "$cache_file"
+    if (( file_mtime > cache_mtime )); then
+      # File was modified since last read — allow re-read, refresh cache
+      echo "$file_path" > "$cache_file"
+    else
+      # File unchanged — check TTL
+      cache_age=$(( $(date +%s) - cache_mtime ))
+      if (( cache_age < ttl )); then
+        jq -nc \
+          --arg path "$file_path" \
+          --argjson age "$cache_age" \
+          '{
+            hookSpecificOutput: {
+              hookEventName: "PreToolUse",
+              permissionDecision: "block",
+              permissionDecisionReason: ("Cached: " + $path + " was read " + ($age | tostring) + "s ago and hasn'\''t changed. Use previous content.")
+            }
+          }'
+        exit 0
+      else
+        # TTL expired — refresh cache
+        echo "$file_path" > "$cache_file"
+      fi
+    fi
+  else
+    # First read — create cache marker
+    echo "$file_path" > "$cache_file"
+  fi
 fi
 
 # ---- Layer 1: Session-based dedup (original) ----

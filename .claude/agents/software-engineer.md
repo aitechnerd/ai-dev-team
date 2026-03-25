@@ -85,6 +85,28 @@ Don't write a plan. Don't design the solution. Just flag what matters.
 5. If building UI, consult ux-designer subagent first
 6. Mark phase as COMPLETE in technical-plan.md when done
 
+### Large File Strategy
+
+Before editing a file, check its size. If a file is over **300 lines**, prefer to split
+it into smaller modules before making changes. Each Edit tool call returns the full file
+content — editing a 1000-line file 10 times costs 10x the tokens of a 100-line file.
+
+**When to split:**
+- File exceeds 300 lines AND you'll make 3+ edits to it
+- File has multiple logical sections (e.g., different view components, handler groups, model definitions)
+
+**How to split:**
+- Extract logical sections into separate files/modules
+- Keep the original file as a coordinator that imports/re-exports
+- Follow the project's existing module patterns (from stack profile)
+- Split BEFORE making feature changes, not after
+
+**When NOT to split:**
+- File is under 300 lines
+- You're only making 1-2 small edits
+- The file is a single cohesive unit (e.g., one struct with its impl block)
+- Splitting would break the project's established patterns
+
 ---
 
 ## MODE 3: Fixing QA Issues
