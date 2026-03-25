@@ -65,15 +65,20 @@ case "$command" in
     filter_type="build"
     ;;
 
-  # Git — disabled for now. Claude needs full git output for commits/diffs.
-  # Uncomment when git filters are refined to preserve commit workflow.
-  # git\ status*)  filter="$FILTER_DIR/filter-git.sh status"; filter_type="git" ;;
-  # git\ diff*)    filter="$FILTER_DIR/filter-git.sh diff"; filter_type="git" ;;
-  # git\ log*)     filter="$FILTER_DIR/filter-git.sh log"; filter_type="git" ;;
-  # git\ show*)    filter="$FILTER_DIR/filter-git.sh show"; filter_type="git" ;;
-  # git\ add*)     filter="$FILTER_DIR/filter-git.sh add"; filter_type="git" ;;
-  # git\ commit*)  filter="$FILTER_DIR/filter-git.sh commit"; filter_type="git" ;;
-  # git\ push*)    filter="$FILTER_DIR/filter-git.sh push"; filter_type="git" ;;
+  # Git commands — filter verbose output while preserving essential info
+  git\ status*)  filter="$FILTER_DIR/filter-git.sh status"; filter_type="git" ;;
+  git\ log*)     filter="$FILTER_DIR/filter-git.sh log"; filter_type="git" ;;
+  git\ show*)    filter="$FILTER_DIR/filter-git.sh show"; filter_type="git" ;;
+  git\ add\ *)   filter="$FILTER_DIR/filter-git.sh add"; filter_type="git" ;;
+  git\ push*)    filter="$FILTER_DIR/filter-git.sh push"; filter_type="git" ;;
+  # git diff/commit stay unfiltered — Claude needs full context for these
+
+  # Generic large-output commands
+  ls\ -la*|ls\ -al*)  filter="$FILTER_DIR/filter-generic.sh ls"; filter_type="generic" ;;
+  find\ *)             filter="$FILTER_DIR/filter-generic.sh find"; filter_type="generic" ;;
+  pip\ install*|pip3\ install*)  filter="$FILTER_DIR/filter-generic.sh pip"; filter_type="generic" ;;
+  npm\ install*|yarn\ install*|pnpm\ install*)  filter="$FILTER_DIR/filter-generic.sh npm"; filter_type="generic" ;;
+  brew\ install*|brew\ upgrade*)  filter="$FILTER_DIR/filter-generic.sh brew"; filter_type="generic" ;;
 
   *)
     # No filter — pass through

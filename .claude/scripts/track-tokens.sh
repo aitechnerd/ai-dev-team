@@ -347,18 +347,18 @@ if [[ "${1:-}" != "" ]] && [[ ! "${1:-}" =~ ^\{ ]]; then
       echo "  Output Compression Savings"
       echo "═══════════════════════════════════════════════════"
       echo ""
-      local SAVINGS_LOG="${HOME}/.local/share/claude-token-tracker/savings.jsonl"
+      SAVINGS_LOG="${HOME}/.local/share/claude-token-tracker/savings.jsonl"
       if [[ ! -f "$SAVINGS_LOG" ]] || [[ ! -s "$SAVINGS_LOG" ]]; then
         echo "  No compression data yet. Enable the compress-bash.sh hook."
         echo ""
         echo "  Add to PreToolUse in settings.json:"
         echo '    {"matcher":"Bash","hooks":[{"type":"command","command":"~/.claude/scripts/compress-bash.sh","timeout":5000}]}'
       else
-        local total_original=$(jq -s '[.[].original_chars] | add // 0' "$SAVINGS_LOG")
-        local total_compressed=$(jq -s '[.[].compressed_chars] | add // 0' "$SAVINGS_LOG")
-        local total_saved=$(jq -s '[.[].saved_chars] | add // 0' "$SAVINGS_LOG")
-        local total_calls=$(wc -l < "$SAVINGS_LOG" | tr -d ' ')
-        local saved_tokens=$((total_saved / 4))
+        total_original=$(jq -s '[.[].original_chars] | add // 0' "$SAVINGS_LOG")
+        total_compressed=$(jq -s '[.[].compressed_chars] | add // 0' "$SAVINGS_LOG")
+        total_saved=$(jq -s '[.[].saved_chars] | add // 0' "$SAVINGS_LOG")
+        total_calls=$(wc -l < "$SAVINGS_LOG" | tr -d ' ')
+        saved_tokens=$((total_saved / 4))
 
         printf "  Commands compressed:  %s\n" "$total_calls"
         printf "  Original output:      %s chars (%s tokens)\n" "$total_original" "$((total_original / 4))"
