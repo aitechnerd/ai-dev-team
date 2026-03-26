@@ -14,6 +14,8 @@ filter_status() {
   local staged_files="" modified_files="" untracked_files=""
   local branch=""
 
+  local current_section=""
+
   while IFS= read -r line; do
     # Strip hint lines
     case "$line" in
@@ -27,6 +29,25 @@ filter_status() {
       continue
     fi
 
+    # Track which section we're in
+    case "$line" in
+      "Changes to be committed"*)
+        current_section="staged"
+        continue ;;
+      "Changes not staged"*)
+        current_section="modified"
+        continue ;;
+      "Unmerged paths:"*)
+        current_section="conflicts"
+        continue ;;
+      "Untracked files:"*)
+        current_section="untracked"
+        continue ;;
+      "no changes"*|"nothing to commit"*|"nothing added"*)
+        echo "clean"
+        return ;;
+    esac
+
     # Detect file states from porcelain-like patterns
     case "$line" in
       *"new file:"*|*"renamed:"*)
@@ -34,9 +55,6 @@ filter_status() {
         staged_files+="  ${line##*:}"$'\n'
         ;;
       *"modified:"*)
-        if [[ "$line" == *"Changes to be committed"* ]]; then
-          continue
-        fi
         modified=$((modified + 1))
         modified_files+="  ${line##*:}"$'\n'
         ;;
@@ -48,15 +66,23 @@ filter_status() {
         conflicts=$((conflicts + 1))
         ;;
       "	"*)
-        # Tab-prefixed = file in a section; handled by context
+        # Tab-prefixed = file in a section
+        local fname="${line#	}"
+        case "$current_section" in
+          untracked)
+            untracked=$((untracked + 1))
+            untracked_files+="  $fname"$'\n'
+            ;;
+          staged)
+            staged=$((staged + 1))
+            staged_files+="  $fname"$'\n'
+            ;;
+          modified)
+            modified=$((modified + 1))
+            modified_files+="  $fname"$'\n'
+            ;;
+        esac
         ;;
-      "Untracked files:"*)
-        continue ;;
-      "Changes not staged"*|"Changes to be committed"*|"Unmerged paths:"*)
-        continue ;;
-      "no changes"*|"nothing to commit"*|"nothing added"*)
-        echo "clean"
-        return ;;
     esac
   done <<< "$input"
 
@@ -68,7 +94,7 @@ filter_status() {
 
   # If we couldn't parse anything useful, fall back to compact original
   if (( staged + modified + untracked + conflicts == 0 )) && [[ -z "$branch" ]]; then
-    echo "$input" | grep -v '^\s*$' | grep -v '^(use ' | head -20
+    echo "$input" | grep -v '^\s*$' | grep -v '^(use ' | head -50
   fi
 }
 
