@@ -13,7 +13,14 @@ allowed-tools:
 
 1. Read the active feature from `.ai-team/.active` (if it exists)
 
-2. List all directories in `.ai-team/` (excluding .active file)
+2. Find all feature directories. Features can be at the top level (`.ai-team/my-thing/`)
+   or nested under prefixes (`.ai-team/feature/my-thing/`, `.ai-team/fix/my-thing/`).
+   A feature directory is any directory that contains at least one artifact file
+   (`sow.md`, `technical-plan.md`, `plan-approved.md`, `shared-context.md`, `findings.md`,
+   `qa-report.md`, `project-summary.md`) OR is referenced in `.ai-team/.active`.
+
+   Scan both `.ai-team/*/` and `.ai-team/*/*/` for artifact files.
+   Use the relative path from `.ai-team/` as the feature name (e.g., `feature/my-thing`).
 
 3. For each feature directory, check which artifacts exist and determine status:
    - Only directory exists → 🆕 Created (no SOW yet)
@@ -30,9 +37,9 @@ allowed-tools:
 >
 > | Feature | Status | Next Step |
 > |---------|--------|-----------|
-> | **→ patient-intake** | ✅ Approved | /build-phase 1 |
-> | auth-system | 📝 Scoping | Continue /scope pipeline |
-> | reporting-dashboard | 🏁 Done | — |
+> | **→ feature/patient-intake** | ✅ Approved | /build-phase 1 |
+> | feature/auth-system | 📝 Scoping | Continue /scope pipeline |
+> | fix/login-bug | 🏁 Done | — |
 >
 > **→** = active feature
 >
