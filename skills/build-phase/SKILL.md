@@ -29,6 +29,18 @@ Phase: $ARGUMENTS
 2. Let FEATURE_DIR = `.ai-team/{active_name}/`
 3. Verify `$FEATURE_DIR/plan-approved.md` exists. If not -> approve plan first.
 4. Read `$FEATURE_DIR/technical-plan.md` to identify all phases.
+5. **Branch check.** Run `git branch --show-current`. If on `main` or `master`:
+   > "You're on **{branch}**. Want me to create a feature branch before building?
+   >
+   > Suggested: `{active_name}` (e.g., `feature/patient-intake`)
+   >
+   > 1. Yes, create branch and switch
+   > 2. No, build on current branch"
+
+   Wait for user response. If yes, create and switch:
+   ```bash
+   git checkout -b {active_name}
+   ```
 
 ---
 
