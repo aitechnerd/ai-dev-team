@@ -56,8 +56,10 @@ Don't write a plan. Don't design the solution. Just flag what matters.
 
 1. Read `.claude/stack.md` and relevant `.claude/stacks/*.md` profiles.
 2. Explore codebase: conventions, schema, test patterns, CLAUDE.md.
-3. Map each acceptance criterion to specific code changes.
-4. Produce `{feature_dir}/technical-plan.md` containing:
+3. **HIPAA check:** If `.hipaa` exists, read it and the SOW's HIPAA section. Factor
+   compliance requirements into every architecture decision.
+4. Map each acceptance criterion to specific code changes.
+5. Produce `{feature_dir}/technical-plan.md` containing:
 
 - **Architecture Overview** — approach appropriate for the detected stack
 - **Technology Decisions** — only where alternatives exist (table format)
@@ -73,6 +75,14 @@ Don't write a plan. Don't design the solution. Just flag what matters.
 - **Edge Cases & Error Handling** — using stack-appropriate patterns
 - **Testing Strategy** — using the project's test framework and conventions
 - **Dependencies & Risks**
+- **HIPAA Compliance Plan** (only if `.hipaa` exists) — include:
+  - PHI data flow: where PHI enters, is stored, processed, and leaves the system
+  - Encryption: algorithms for at-rest (AES-256) and in-transit (TLS), key management approach
+  - Audit logging: which events to log, log format, storage, retention (6 years minimum)
+  - Access control: authentication + authorization checks on every PHI endpoint
+  - PHI sanitization: how to keep PHI out of logs, error messages, URLs, and client storage
+  - Third-party services: which receive PHI, BAA status
+  - Each implementation phase that touches PHI must include HIPAA verification steps
 
 ---
 
@@ -83,7 +93,13 @@ Don't write a plan. Don't design the solution. Just flag what matters.
 3. Follow existing patterns — match the codebase
 4. Run tests using commands from `.claude/stack.md`
 5. If building UI, consult ux-designer subagent first
-6. Mark phase as COMPLETE in technical-plan.md when done
+6. **HIPAA guard** (if `.hipaa` exists): Before marking a phase complete, verify:
+   - No PHI in log statements, error messages, or URLs
+   - PHI endpoints have authentication + authorization checks
+   - PHI access/modification is audit-logged
+   - Data at rest and in transit is encrypted
+   - No PHI leaks to third-party services without BAA
+7. Mark phase as COMPLETE in technical-plan.md when done
 
 ### Large File Strategy
 

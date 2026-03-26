@@ -73,7 +73,16 @@ throughout — it shapes your questions, your scope shaping, and your SOW.
    - **EXPAND:** MUST HAVE is generous, SUGGESTIONS are ambitious, V2 is for polish not features
    - **HOLD:** MUST HAVE is tight, V2 is for nice-to-haves, SAY NO is assertive
    - **REDUCE:** MUST HAVE is ruthlessly minimal, most items go to V2 or SAY NO
-4. **SOW** -> save to `{feature_dir}/sow.md` containing:
+4. **HIPAA Check** — If `.hipaa` exists in the project root, this is a HIPAA-regulated project.
+   During discovery, add these questions (adapt to context):
+   - Does this feature create, read, update, or delete PHI (protected health information)?
+   - Which PHI fields are involved? (e.g., name, DOB, MRN, diagnosis, medication)
+   - Are any third-party services involved that would need a BAA?
+   - Are there specific compliance constraints (audit logging, retention, access control)?
+   Read `.hipaa` for project-specific config (phi_fields, data_stores, auth_model, baa_required).
+   Include HIPAA findings in scope shaping — flag compliance risks in SAY NO or DEFER TO V2.
+
+5. **SOW** -> save to `{feature_dir}/sow.md` containing:
    - Scope Mode: [EXPAND / HOLD / REDUCE] (so downstream agents know the posture)
    - Executive Summary (one paragraph)
    - Problem Statement
@@ -82,6 +91,14 @@ throughout — it shapes your questions, your scope shaping, and your SOW.
    - Acceptance Criteria (AC-N: Given/When/Then, specific enough for tests)
    - Definition of Done
    - Technical Constraints, Open Questions, Dependencies
+   - **HIPAA Compliance** (only if `.hipaa` exists): PHI fields involved, encryption
+     requirements (at rest + in transit), audit logging requirements (what events to log),
+     access control requirements (who can access what), BAA requirements for third-party
+     services, data retention/disposal needs. Add HIPAA-specific ACs:
+     - AC for audit logging of all PHI access/modification
+     - AC for encryption of PHI at rest and in transit
+     - AC for role-based access control on PHI endpoints
+     - AC for no PHI in logs, error messages, or URLs
 
 ---
 

@@ -36,12 +36,26 @@ Use the stack's test commands to verify tests actually pass.
 3. **AC Audit** — For each AC: find implementing code, trace the full path, verify met.
 4. **Edge Cases** — Input boundaries, concurrency, unexpected state, network failures,
    authz (can user A access user B's data?), data integrity.
-5. **Test Coverage** — Using the stack's test framework:
+5. **HIPAA Validation** (only if `.hipaa` exists in project root) — Read `.hipaa` for
+   config. This is a HIPAA-regulated project; validate compliance alongside ACs:
+   - **PHI exposure:** Grep for log/print/console statements near PHI fields — verify
+     no PHI in logs, error messages, URLs, or query parameters
+   - **Audit logging:** Verify all PHI read/write/delete operations produce audit log
+     entries (who, what record, when, from where)
+   - **Access control:** Test that PHI endpoints require authentication; test that user A
+     cannot access user B's PHI (IDOR check); verify session timeout is configured
+   - **Encryption:** Verify DB connections use SSL, API endpoints use HTTPS, PHI at rest
+     is encrypted
+   - **Third-party leaks:** Check error tracking (Sentry, Bugsnag), analytics, and logging
+     services don't receive unscrubbed PHI
+   - **Data retention:** Verify deletion is secure (not just soft delete) if applicable
+   Mark HIPAA findings as CRITICAL severity. Any HIPAA violation = FAIL verdict.
+6. **Test Coverage** — Using the stack's test framework:
    - Find test files following stack conventions
    - Verify each P0 AC has >= 1 test
    - Run tests: `[command from stack profile]`
    - Check error path coverage
-6. **Produce QA report.**
+7. **Produce QA report.**
 
 ## Browser-Based Testing (via playwright-cli)
 
@@ -88,11 +102,21 @@ This file is required by the pipeline — if you skip writing it, the next step 
 ## Test Coverage
 - Missing: [untested scenarios that need tests]
 
+## HIPAA Compliance (if applicable)
+| Check | Status |
+|-------|--------|
+| No PHI in logs/errors/URLs | PASS/FAIL |
+| Audit logging on PHI access | PASS/FAIL |
+| Access control enforced | PASS/FAIL |
+| Encryption (rest + transit) | PASS/FAIL |
+| No PHI to third-parties without BAA | PASS/FAIL |
+
 ## Definition of Done
 - [ ] All P0 ACs passing
 - [ ] Critical edge cases handled
 - [ ] Tests written and passing
 - [ ] No critical security issues
+- [ ] HIPAA compliance verified (if .hipaa exists)
 ```
 
 FAIL = any critical AC failing. CONDITIONAL PASS = ACs pass but gaps exist. PASS = clean.

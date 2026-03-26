@@ -268,6 +268,55 @@ Apply fixes               → SKILL.md updated
 
 Results are saved to `.ai-team/evals/` with full history in `history.jsonl`.
 
+## HIPAA Compliance Reviews
+
+The `hipaa` skill runs automated HIPAA compliance checks — PHI exposure, encryption, access controls, audit logging, and BAA coverage. It's **opt-in per project** via a marker file.
+
+### Activate for a project
+
+```bash
+cd ~/your-project
+touch .hipaa
+echo ".hipaa" >> .gitignore   # optional: keep it out of version control
+```
+
+That's it. The skill checks for this file before running — no marker, no review.
+
+### Configure (optional)
+
+The `.hipaa` file can contain project-specific config:
+
+```
+phi_fields: ssn, dob, mrn, diagnosis, medication, insurance_id
+data_stores: postgres, s3, redis
+auth_model: oauth2
+covered_entity: yes
+baa_required: sentry, sendgrid, datadog
+```
+
+If left empty, the skill uses sensible defaults and scans everything.
+
+### Pipeline integration
+
+When `.hipaa` exists, HIPAA compliance is automatically woven into the pipeline:
+
+| Step | What happens |
+|------|-------------|
+| **PO scoping** (`/scope`) | Asks about PHI fields, BAA needs, compliance constraints. Adds HIPAA-specific ACs to the SOW (audit logging, encryption, access control, no PHI leaks). |
+| **SE planning** (`/build-phase`) | Technical plan includes HIPAA compliance plan — PHI data flow, encryption approach, audit logging strategy, access control design. |
+| **SE implementation** | Before completing each phase, verifies: no PHI in logs/errors/URLs, auth on PHI endpoints, audit logging in place, encryption applied. |
+| **QA validation** | Validates HIPAA compliance alongside ACs — greps for PHI in logs, tests access control (IDOR), verifies audit logging, checks third-party PHI leaks. HIPAA violation = FAIL verdict. |
+
+No extra commands needed — just `touch .hipaa` and use the pipeline normally.
+
+### Standalone review
+
+```bash
+/hipaa          # full HIPAA compliance review on existing code
+```
+
+Covers PHI exposure, encryption (at rest + in transit), access controls, audit logging (§164.312(b)), data retention, and third-party/BAA compliance.
+
 ## When to Use This vs Default Claude Code
 
 | Situation | Use |
