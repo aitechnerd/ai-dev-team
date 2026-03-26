@@ -116,7 +116,10 @@ When in doubt, don't auto-fix. It's better to ask about something simple than to
 
 ---
 
-## Output -> save to `{feature_dir}/code-review.md`:
+## Output
+
+**MANDATORY:** Use the Write tool to save the report below to `{feature_dir}/code-review.md`.
+This file is required by the pipeline — if you skip writing it, the next step will not trigger.
 
 ```
 # Code Review: [Feature]

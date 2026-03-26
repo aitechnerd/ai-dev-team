@@ -43,7 +43,8 @@ Read `technical-plan.md` and `sow.md`.
 deployment feasibility, migration risks, stack-specific vulnerabilities,
 HIPAA/PHI (when applicable), CI/CD pipeline using stack's build commands.
 
-**Output** -> save to `{feature_dir}/devsecops-plan-review.md`:
+**MANDATORY:** Use the Write tool to save the report below to `{feature_dir}/devsecops-plan-review.md`.
+This file is required by the pipeline — if you skip writing it, the next step will not trigger.
 ```
 # DevSecOps Plan Review: [Feature]
 ## Risk Assessment: [LOW / MEDIUM / HIGH / CRITICAL]
@@ -72,7 +73,8 @@ Read scanner reports from `{feature_dir}/scans/`. Parse JSON, count by severity.
 Then do manual review for logic issues scanners miss, focusing on the stack's
 "Common Vulnerabilities" from the profile.
 
-**Output** -> save to `{feature_dir}/security-scan.md`:
+**MANDATORY:** Use the Write tool to save the report below to `{feature_dir}/security-scan.md`.
+This file is required by the pipeline — if you skip writing it, the next step will not trigger.
 ```
 # Security Scan: [Feature]
 **Date:** [date]

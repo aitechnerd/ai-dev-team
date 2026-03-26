@@ -53,7 +53,10 @@ For web applications, use `playwright-cli` to verify UI behavior:
 5. `playwright-cli screenshot` — capture evidence
 6. `playwright-cli resize 375 812` — test responsive layouts
 
-## Output -> save to `{feature_dir}/qa-report.md`:
+## Output
+
+**MANDATORY:** Use the Write tool to save the report below to `{feature_dir}/qa-report.md`.
+This file is required by the pipeline — if you skip writing it, the next step will not trigger.
 
 ```
 # QA Report: [Feature]
